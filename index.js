@@ -91,7 +91,7 @@ const renderQuiz = () => {
         // 버튼 생성 (힌트, 리셋)
         const hintBtn = document.createElement('button');
         hintBtn.className = 'btn-hint';
-        hintBtn.innerText = '💡';
+        hintBtn.innerText = '💡 힌트';
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset';
         resetBtn.innerText = '🔄';

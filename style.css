@@ -138,7 +138,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 .choice {
@@ -172,6 +172,23 @@ body {
   padding: 13px 15px;
 }
 
+.btn-reset{
+  background: rgba(44, 58, 255, 0.07);
+  border: 1px solid rgba(76, 6, 255, 0.25);
+  border-radius: 14px;
+  padding: 13px 15px;
+}
+
+.btn-submit{
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 247, 230, 0.25);
+  border-radius: 14px;
+  padding: 13px 15px;
+  color: #fff;
+  margin-top: 12px;
+}
+
 /* ACTIONS */
 .actions {
   display: flex;
@@ -202,15 +219,7 @@ body {
     align-items: center;
 }
 
-.btn-reset {
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 14px;
-    transition: background 0.2s;
-}
+
 /* Toast 메시지 컨테이너 */
 #toast-container {
     position: fixed;

@@ -1,288 +1,256 @@
 import { que } from './data_fixed.js';
 
-/**
- * 1. 전역 변수 및 요소 설정
- */
-const mainContainer = document.querySelector('.main');
-const qCardTemplate = document.querySelector('.q-card');
-const resetAllBtn = document.querySelector('.reset'); 
-
-const scoreG = document.querySelector('.dot.g + span');
-const scoreR = document.querySelector('.dot.r + span');
-const scoreTtl = document.querySelector('.dot.ttl + span');
-
+// --- 전역 상태 및 상숫값 ---
 const STORAGE_KEY = 'quiz_solved_data';
-
 let solvedData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
     correctIds: [], 
     correctCount: 0,
     wrongCount: 0
 };
 
-let currentWrongCount = solvedData.wrongCount; 
-let currentCorrectCount = solvedData.correctCount;
+let currentCorrect = solvedData.correctCount;
+let currentWrong = solvedData.wrongCount;
 
-const updateHeaderScore = () => {
-    if (scoreG) scoreG.innerText = currentCorrectCount;
-    if (scoreR) scoreR.innerText = currentWrongCount;
+const mainContainer = document.querySelector('.main');
+const qCardTemplate = document.querySelector('.q-card');
+const scoreG = document.querySelector('.dot.g + span');
+const scoreR = document.querySelector('.dot.r + span');
+const scoreTtl = document.querySelector('.dot.ttl + span');
+const resetAllBtn = document.querySelector('.reset');
+
+// --- 유틸리티 함수 ---
+const updateUI = () => {
+    if (scoreG) scoreG.innerText = currentCorrect;
+    if (scoreR) scoreR.innerText = currentWrong;
     if (scoreTtl) scoreTtl.innerText = que.length;
 };
 
-/**
- * 2. 유틸리티 함수
- */
-const saveProgress = () => {
-    solvedData.correctCount = currentCorrectCount;
-    solvedData.wrongCount = currentWrongCount;
+const saveToLocal = () => {
+    solvedData.correctCount = currentCorrect;
+    solvedData.wrongCount = currentWrong;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(solvedData));
 };
 
-const showToast = (message, type = 'success') => {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerText = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-};
+const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const getRandomMode = () => Math.floor(Math.random() * 2);
+// --- 인터랙션: 애니메이션 (Flyer Effect) ---
+const animateFly = (startRect, endEl, word) => {
+    const flyer = document.createElement('div');
+    flyer.innerText = word;
+    flyer.style.cssText = `
+        position: fixed;
+        top: ${startRect.top}px;
+        left: ${startRect.left}px;
+        width: ${startRect.width}px;
+        height: ${startRect.height}px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        z-index: 9999;
+        pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    `;
+    document.body.appendChild(flyer);
 
-const escapeRegExp = (string) => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
+    const endRect = endEl.getBoundingClientRect();
 
-const getExtraKeywords = (excludeWords, count) => {
-    const allWords = [];
-    que.forEach(item => {
-        if(item.main) allWords.push(item.main);
-        if(item.sub) item.sub.forEach(s => allWords.push(s));
+    requestAnimationFrame(() => {
+        flyer.style.top = `${endRect.top}px`;
+        flyer.style.left = `${endRect.left}px`;
+        flyer.style.transform = 'scale(0.6)';
+        flyer.style.opacity = '0.5';
     });
-    const filteredPool = Array.from(new Set(allWords))
-        .filter(word => !excludeWords.includes(word));
-    return filteredPool.sort(() => Math.random() - 0.5).slice(0, count);
+
+    setTimeout(() => {
+        flyer.remove();
+        endEl.innerText = word;
+        endEl.classList.add('filled');
+        endEl.style.transform = 'scale(1.1)';
+        setTimeout(() => endEl.style.transform = 'scale(1)', 150);
+    }, 400);
 };
 
-/**
- * 3. 메인 실행 로직
- */
-const renderQuiz = () => {
+// --- 인터랙션: 카드 위치 이동 애니메이션 ---
+const moveCardWithGhost = (card) => {
+    const rect = card.getBoundingClientRect();
+    const ghost = card.cloneNode(true);
+    
+    ghost.style.cssText = `
+        position: fixed; top: ${rect.top}px; left: ${rect.left}px;
+        width: ${rect.width}px; z-index: 1000; pointer-events: none;
+        transition: all 0.6s ease-in-out; opacity: 0.7;
+    `;
+    document.body.appendChild(ghost);
+
+    card.style.visibility = 'hidden';
+    mainContainer.appendChild(card); // 실제 데이터 맨 뒤로 이동
+
+    const targetRect = card.getBoundingClientRect();
+    
+    requestAnimationFrame(() => {
+        ghost.style.top = `${targetRect.top}px`;
+        ghost.style.opacity = '0';
+    });
+
+    setTimeout(() => {
+        ghost.remove();
+        card.style.visibility = 'visible';
+    }, 600);
+};
+
+// --- 메인 렌더링 로직 ---
+const render = () => {
+    if (!mainContainer || !qCardTemplate) return;
     mainContainer.innerHTML = '';
-    updateHeaderScore();
+    updateUI();
 
-    que.forEach((item, index) => {
-        if (solvedData.correctIds.includes(index)) return;
+    que.forEach((item, idx) => {
+        if (solvedData.correctIds.includes(idx)) return;
 
-        const newCard = qCardTemplate.cloneNode(true);
-        const qTopic = newCard.querySelector('.q-topic');
-        const qText = newCard.querySelector('.q-text');
+        const card = qCardTemplate.cloneNode(true);
+        card.style.display = 'block';
+        const qTopic = card.querySelector('.q-topic');
+        const qText = card.querySelector('.q-text');
+        const choicesArea = card.querySelector('.choices');
+
+        // 1. 상단 버튼 (힌트, 리셋)
+        qTopic.innerHTML = '';
+        const hBtn = document.createElement('button');
+        hBtn.innerText = '💡 힌트';
+        hBtn.className = 'btn-hint';
+        const rBtn = document.createElement('button');
+        rBtn.innerText = '🔄 리셋';
+        rBtn.className = 'btn-reset';
+        qTopic.append(hBtn, rBtn);
+
+        // 2. 문제 텍스트 및 빈칸 생성 (순서 버그 방지 로직)
+        const isSubMode = Math.random() > 0.5;
+        const targets = (isSubMode && item.sub) ? [...item.sub] : [item.main];
+        const sortedTargets = [...targets].sort((a, b) => b.length - a.length);
         
-        qTopic.innerHTML = ''; 
-        const hintBtn = document.createElement('button');
-        hintBtn.className = 'btn-hint';
-        hintBtn.innerText = '💡 힌트';
-        const resetBtn = document.createElement('button');
-        resetBtn.className = 'btn-reset';
-        resetBtn.innerText = '🔄';
-        qTopic.appendChild(hintBtn);
-        qTopic.appendChild(resetBtn);
+        let htmlContent = item.sentense;
+        const regex = new RegExp(`(${sortedTargets.map(escapeRegExp).join('|')})`, 'g');
+        qText.innerHTML = htmlContent.replace(regex, (m) => `<span class="blank" data-answer="${m}">?</span>`);
 
-        let choicesArea = newCard.querySelector('.choices');
-        if (!choicesArea) {
-            choicesArea = document.createElement('div');
-            choicesArea.className = 'choices';
-        }
-        newCard.appendChild(choicesArea); 
-
-        const submitBtn = document.createElement('button');
-        submitBtn.className = 'btn-submit';
-        submitBtn.innerText = '제출하기';
-        choicesArea.after(submitBtn);
-
-        // 빈칸 처리
-        const mode = getRandomMode();
-        const targetKeywords = ((mode === 0) ? [item.main] : [...item.sub])
-            .filter(kw => kw && kw.trim())
-            .sort((a, b) => b.length - a.length) 
-            .slice(0, 4);
-
-        let finalHTML = item.sentense;
-        const escapedKws = targetKeywords.map(kw => escapeRegExp(kw.trim()).split('').join('\\s*'));
-        const combinedRegex = new RegExp(`(${escapedKws.join('|')})`, 'g');
-
-        finalHTML = finalHTML.replace(combinedRegex, (match) => {
-            // 드롭을 받기 위한 이벤트 속성 추가
-            return `<span class="blank" data-answer="${match.trim()}" style="cursor:pointer">?</span>`;
-        });
-        qText.innerHTML = finalHTML;
-
-        // 드롭 대상(빈칸) 설정
-        const blanks = newCard.querySelectorAll('.blank');
-        blanks.forEach(blank => {
-            blank.addEventListener('dragover', (e) => e.preventDefault()); // 드롭 허용
-            blank.addEventListener('drop', (e) => {
+        // 3. 드롭 존(빈칸) 설정
+        const blanks = card.querySelectorAll('.blank');
+        blanks.forEach(b => {
+            b.addEventListener('dragover', e => e.preventDefault());
+            b.addEventListener('drop', e => {
                 e.preventDefault();
-                const data = e.dataTransfer.getData("text");
-                blank.innerText = data;
-                blank.classList.add('filled');
-                blank.style.backgroundColor = ''; // 이전 오답 색상 초기화
+                const word = e.dataTransfer.getData('text');
+                const startRect = JSON.parse(e.dataTransfer.getData('rect'));
+                animateFly(startRect, b, word);
             });
-            // 클릭 시 리셋 기능 유지
-            blank.addEventListener('click', () => {
-                blank.innerText = '?';
-                blank.classList.remove('filled');
-                blank.style.backgroundColor = '';
-            });
-        });
-
-        // 힌트/리셋 로직은 동일
-        hintBtn.onclick = (e) => {
-            e.stopPropagation();
-            const currentHTML = qText.innerHTML;
-            qText.innerText = item.sentense;
-            hintBtn.disabled = true;
-            let timeLeft = 3;
-            const timerSpan = document.createElement('span');
-            timerSpan.style.fontSize = '12px';
-            timerSpan.style.marginLeft = '5px';
-            timerSpan.innerText = `(${timeLeft}s)`;
-            hintBtn.appendChild(timerSpan);
-
-            const countdown = setInterval(() => {
-                timeLeft -= 1;
-                timerSpan.innerText = `(${timeLeft}s)`;
-                if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    qText.innerHTML = currentHTML;
-                    timerSpan.remove();
-                    hintBtn.disabled = false;
-                    mainContainer.appendChild(newCard);
-                    showToast('힌트 확인! 맨 뒤로 이동합니다.', 'error');
-                }
-            }, 1000);
-        };
-
-        resetBtn.onclick = (e) => {
-            e.stopPropagation();
-            newCard.querySelectorAll('.blank').forEach(b => {
+            b.onclick = () => {
                 b.innerText = '?';
                 b.classList.remove('filled');
                 b.style.backgroundColor = '';
-            });
-        };
+            };
+        });
 
-        // 보기 버튼 생성 (드래그 가능하도록 수정)
+        // 4. 보기 버튼 생성
         choicesArea.innerHTML = '';
-        let currentPool = Array.from(new Set(targetKeywords));
-        if (currentPool.length < 4) {
-            const extras = getExtraKeywords(currentPool, 4 - currentPool.length);
-            currentPool = [...currentPool, ...extras];
-        }
-        const finalChoices = currentPool.sort(() => Math.random() - 0.5).slice(0, 4);
+        const choicePool = [...new Set([...targets, ...getExtraWords(targets, 4 - targets.length)])].sort(() => Math.random() - 0.5);
 
-        finalChoices.forEach(word => {
+        choicePool.forEach(word => {
             const btn = document.createElement('button');
             btn.className = 'choice';
             btn.innerText = word;
-            btn.draggable = true; // 드래그 가능하게 설정
+            btn.draggable = true;
 
-            // 드래그 시작 시 데이터 설정
             btn.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData("text", word);
+                const rect = btn.getBoundingClientRect();
+                e.dataTransfer.setData('text', word);
+                e.dataTransfer.setData('rect', JSON.stringify({top: rect.top, left: rect.left, width: rect.width, height: rect.height}));
             });
 
-            // 클릭 시에도 입력되도록 기존 기능 유지 (모바일 및 편의성)
             btn.onclick = () => {
-                const emptyBlank = newCard.querySelector('.blank:not(.filled)');
-                if (emptyBlank) {
-                    emptyBlank.innerText = word;
-                    emptyBlank.classList.add('filled');
-                }
+                const emptyBlank = card.querySelector('.blank:not(.filled)');
+                if (emptyBlank) animateFly(btn.getBoundingClientRect(), emptyBlank, word);
             };
             choicesArea.appendChild(btn);
         });
 
-        // 제출 로직 (기존 opt 판별 로직 포함)
-        submitBtn.onclick = () => {
-            const currentBlanks = Array.from(newCard.querySelectorAll('.blank'));
-            if (currentBlanks.length === 0) return;
+        // 5. 제출 로직
+        const sBtn = document.createElement('button');
+        sBtn.innerText = '제출하기';
+        sBtn.className = 'btn-submit';
+        card.appendChild(sBtn);
 
-            const isComplete = currentBlanks.every(b => b.classList.contains('filled'));
-            if (!isComplete) {
-                showToast('모든 빈칸을 채워주세요!', 'error');
-                return;
-            }
+        sBtn.onclick = () => {
+            const currentBlanks = Array.from(card.querySelectorAll('.blank'));
+            if (currentBlanks.some(b => !b.classList.contains('filled'))) return alert('빈칸을 채워주세요!');
 
-            let allCorrect = false;
+            let isCorrect = false;
             if (item.opt === 1) {
-                const userAnswers = currentBlanks.map(b => b.innerText.replace(/\s+/g, '')).sort();
-                const correctAnswers = currentBlanks.map(b => b.dataset.answer.replace(/\s+/g, '')).sort();
-                allCorrect = userAnswers.every((val, i) => val === correctAnswers[i]);
-                currentBlanks.forEach(b => b.style.backgroundColor = allCorrect ? '#d4edda' : '#f8d7da');
+                const user = currentBlanks.map(b => b.innerText.trim()).sort();
+                const ans = currentBlanks.map(b => b.dataset.answer.trim()).sort();
+                isCorrect = user.every((v, i) => v === ans[i]);
             } else {
-                allCorrect = true;
-                currentBlanks.forEach(blank => {
-                    const userAnswer = blank.innerText.replace(/\s+/g, '');
-                    const correctAnswer = blank.dataset.answer.replace(/\s+/g, '');
-                    if (userAnswer === correctAnswer) {
-                        blank.style.backgroundColor = '#d4edda';
-                    } else {
-                        blank.style.backgroundColor = '#f8d7da';
-                        allCorrect = false;
-                    }
-                });
+                isCorrect = currentBlanks.every(b => b.innerText.trim() === b.dataset.answer.trim());
             }
 
-            if (allCorrect) {
-                currentCorrectCount++;
-                solvedData.correctIds.push(index); 
-                saveProgress();
-                updateHeaderScore();
-                showToast('정답입니다! 🎉', 'success');
+            if (isCorrect) {
+                currentCorrect++;
+                solvedData.correctIds.push(idx);
+                currentBlanks.forEach(b => b.style.backgroundColor = '#d4edda');
+                saveToLocal();
+                updateUI();
                 setTimeout(() => {
-                    newCard.style.opacity = '0';
-                    newCard.style.transition = '0.4s';
-                    setTimeout(() => newCard.remove(), 400);
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-20px)';
+                    card.style.transition = '0.4s';
+                    setTimeout(() => card.remove(), 400);
                 }, 500);
             } else {
-                currentWrongCount++;
-                saveProgress();
-                updateHeaderScore();
-                showToast('오답입니다! 다시 풀어보세요. 🤔', 'error');
+                currentWrong++;
+                updateUI();
+                currentBlanks.forEach(b => b.style.backgroundColor = '#f8d7da');
                 setTimeout(() => {
-                    currentBlanks.forEach(blank => {
-                        blank.innerText = '?';
-                        blank.classList.remove('filled');
-                        blank.style.backgroundColor = '';
-                    });
-                    mainContainer.appendChild(newCard);
-                }, 500);
+                    currentBlanks.forEach(b => { b.innerText = '?'; b.classList.remove('filled'); b.style.backgroundColor = ''; });
+                    moveCardWithGhost(card);
+                }, 800);
             }
         };
 
-        mainContainer.appendChild(newCard);
+        // 6. 힌트 및 리셋
+        hBtn.onclick = () => {
+            const original = qText.innerHTML;
+            qText.innerText = item.sentense;
+            hBtn.disabled = true;
+            let count = 3;
+            const timer = setInterval(() => {
+                hBtn.innerText = `⏳ ${count}s`;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    qText.innerHTML = original;
+                    hBtn.innerText = '💡 힌트';
+                    hBtn.disabled = false;
+                    moveCardWithGhost(card);
+                }
+                count--;
+            }, 1000);
+        };
+
+        rBtn.onclick = () => {
+            card.querySelectorAll('.blank').forEach(b => { b.innerText = '?'; b.classList.remove('filled'); b.style.backgroundColor = ''; });
+        };
+
+        mainContainer.appendChild(card);
     });
 };
 
-if (resetAllBtn) {
-    resetAllBtn.onclick = () => {
-        if (confirm('모든 기록을 초기화하시겠습니까?')) {
-            localStorage.removeItem(STORAGE_KEY);
-            solvedData = { correctIds: [], correctCount: 0, wrongCount: 0 };
-            currentCorrectCount = 0;
-            currentWrongCount = 0;
-            renderQuiz();
-        }
-    };
-}
+const getExtraWords = (exclude, count) => {
+    const pool = [];
+    que.forEach(q => { pool.push(q.main); if(q.sub) q.sub.forEach(s => pool.push(s)); });
+    return [...new Set(pool)].filter(w => !exclude.includes(w)).sort(() => Math.random() - 0.5).slice(0, count);
+};
 
-renderQuiz();
+if (resetAllBtn) resetAllBtn.onclick = () => { if(confirm('초기화하시겠습니까?')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
+
+render();

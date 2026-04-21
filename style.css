@@ -226,9 +226,11 @@ body {
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
+    width: 95%;
 }
 
 .toast {
+  width: 100%;
     padding: 12px 24px;
     margin-top: 10px;
     border-radius: 8px;
@@ -236,7 +238,7 @@ body {
     font-weight: bold;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.3s, transform 0.3s;
     transform: translateY(20px);
 }

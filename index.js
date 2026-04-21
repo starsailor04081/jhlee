@@ -141,7 +141,7 @@ const renderQuiz = () => {
             qText.innerText = item.sentense;
             hintBtn.disabled = true;
 
-            let timeLeft = 3;
+            let timeLeft = 5;
             const timerSpan = document.createElement('span');
             timerSpan.style.fontSize = '12px';
             timerSpan.style.marginLeft = '5px';

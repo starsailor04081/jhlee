@@ -73,39 +73,6 @@ const getExtraKeywords = (excludeWords, count) => {
 };
 
 /**
- * [신규] 애니메이션 플라이 효과 함수
- */
-const animateFly = (startRect, endEl, word) => {
-    const flyer = document.createElement('div');
-    flyer.innerText = word;
-    flyer.className = 'choice'; 
-    flyer.style.cssText = `
-        position: fixed; top: ${startRect.top}px; left: ${startRect.left}px;
-        width: ${startRect.width}px; height: ${startRect.height}px;
-        z-index: 10000; margin: 0; pointer-events: none;
-        transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2);
-    `;
-    document.body.appendChild(flyer);
-
-    const endRect = endEl.getBoundingClientRect();
-
-    requestAnimationFrame(() => {
-        flyer.style.top = `${endRect.top}px`;
-        flyer.style.left = `${endRect.left}px`;
-        flyer.style.transform = 'scale(0.8)';
-        flyer.style.opacity = '0.7';
-    });
-
-    setTimeout(() => {
-        flyer.remove();
-        endEl.innerText = word;
-        endEl.classList.add('filled');
-        endEl.style.transform = 'scale(1.1)';
-        setTimeout(() => endEl.style.transform = 'scale(1)', 150);
-    }, 350);
-};
-
-/**
  * 3. 메인 실행 로직
  */
 const renderQuiz = () => {
@@ -141,7 +108,7 @@ const renderQuiz = () => {
         submitBtn.innerText = '제출하기';
         choicesArea.after(submitBtn);
 
-        // 빈칸 처리 로직
+        // 빈칸 처리
         const mode = getRandomMode();
         const targetKeywords = ((mode === 0) ? [item.main] : [...item.sub])
             .filter(kw => kw && kw.trim())
@@ -149,43 +116,54 @@ const renderQuiz = () => {
             .slice(0, 4);
 
         let finalHTML = item.sentense;
-        const escapedKws = targetKeywords.map(kw => escapeRegExp(kw.trim()).split('').join('\\s*'));
+        // const escapedKws = targetKeywords.map(kw => escapeRegExp(kw.trim()).split('').join('\\s*'));
+        const escapedKws = targetKeywords.map(kw => {
+        // 1. 먼저 단어 전체를 안전하게 이스케이프 (특수문자 앞에 \ 붙임)
+        const safeWord = escapeRegExp(kw.trim());
+        // 2. 글자 하나하나 사이에 \s* (공백 허용)를 넣되, 이미 \가 붙은 그룹은 유지
+        // 안전을 위해 글자 단위 분리 후 합치기
+        return safeWord.split('').map((char, i, arr) => {
+            // 백슬래시(\) 자체는 뒤의 문자와 결합되어야 하므로 제외
+            if (char === '\\') return char;
+            // 앞 문자가 백슬래시였다면 공백 허용 기호를 붙이지 않음 (이스케이프 그룹 유지)
+            if (arr[i - 1] === '\\') return char;
+            // 일반 문자 뒤에만 \s* 추가
+            return char + '\\s*';
+        }).join('');
+    });
         const combinedRegex = new RegExp(`(${escapedKws.join('|')})`, 'g');
 
         finalHTML = finalHTML.replace(combinedRegex, (match) => {
+            // 드롭을 받기 위한 이벤트 속성 추가
             return `<span class="blank" data-answer="${match.trim()}" style="cursor:pointer">?</span>`;
         });
-        
         qText.innerHTML = finalHTML;
 
-        // [수정] 빈칸 드롭 존 설정
+        // 드롭 대상(빈칸) 설정
         const blanks = newCard.querySelectorAll('.blank');
-        blanks.forEach(b => {
-            b.addEventListener('dragover', e => e.preventDefault());
-            b.addEventListener('drop', e => {
+        blanks.forEach(blank => {
+            blank.addEventListener('dragover', (e) => e.preventDefault()); // 드롭 허용
+            blank.addEventListener('drop', (e) => {
                 e.preventDefault();
-                const word = e.dataTransfer.getData('text');
-                const startRect = JSON.parse(e.dataTransfer.getData('rect'));
-                animateFly(startRect, b, word);
+                const data = e.dataTransfer.getData("text");
+                blank.innerText = data;
+                blank.classList.add('filled');
+                blank.style.backgroundColor = ''; // 이전 오답 색상 초기화
+            });
+            // 클릭 시 리셋 기능 유지
+            blank.addEventListener('click', () => {
+                blank.innerText = '?';
+                blank.classList.remove('filled');
+                blank.style.backgroundColor = '';
             });
         });
 
-        // 빈칸 클릭 시 리셋
-        newCard.addEventListener('click', (e) => {
-            if (e.target.classList.contains('blank')) {
-                e.target.innerText = '?';
-                e.target.classList.remove('filled');
-                e.target.style.backgroundColor = '';
-            }
-        });
-
-        // 힌트 로직
+        // 힌트/리셋 로직은 동일
         hintBtn.onclick = (e) => {
             e.stopPropagation();
             const currentHTML = qText.innerHTML;
             qText.innerText = item.sentense;
             hintBtn.disabled = true;
-
             let timeLeft = 3;
             const timerSpan = document.createElement('span');
             timerSpan.style.fontSize = '12px';
@@ -216,7 +194,7 @@ const renderQuiz = () => {
             });
         };
 
-        // 보기 버튼 생성
+        // 보기 버튼 생성 (드래그 가능하도록 수정)
         choicesArea.innerHTML = '';
         let currentPool = Array.from(new Set(targetKeywords));
         if (currentPool.length < 4) {
@@ -229,48 +207,44 @@ const renderQuiz = () => {
             const btn = document.createElement('button');
             btn.className = 'choice';
             btn.innerText = word;
-            btn.draggable = true; // 드래그 활성화
+            btn.draggable = true; // 드래그 가능하게 설정
 
-            // 드래그 시작 시 위치 정보 저장
+            // 드래그 시작 시 데이터 설정
             btn.addEventListener('dragstart', (e) => {
-                const rect = btn.getBoundingClientRect();
-                e.dataTransfer.setData('text', word);
-                e.dataTransfer.setData('rect', JSON.stringify({
-                    top: rect.top, left: rect.left, width: rect.width, height: rect.height
-                }));
+                e.dataTransfer.setData("text", word);
             });
 
-            // 클릭 시 입력 (기존 로직 유지 + 애니메이션 추가)
+            // 클릭 시에도 입력되도록 기존 기능 유지 (모바일 및 편의성)
             btn.onclick = () => {
                 const emptyBlank = newCard.querySelector('.blank:not(.filled)');
                 if (emptyBlank) {
-                    animateFly(btn.getBoundingClientRect(), emptyBlank, word);
+                    emptyBlank.innerText = word;
+                    emptyBlank.classList.add('filled');
                 }
             };
             choicesArea.appendChild(btn);
         });
 
-        // 제출 로직 (유지)
+        // 제출 로직 (기존 opt 판별 로직 포함)
         submitBtn.onclick = () => {
-            const blanks = Array.from(newCard.querySelectorAll('.blank'));
-            if (blanks.length === 0) return;
+            const currentBlanks = Array.from(newCard.querySelectorAll('.blank'));
+            if (currentBlanks.length === 0) return;
 
-            const isComplete = blanks.every(b => b.classList.contains('filled'));
+            const isComplete = currentBlanks.every(b => b.classList.contains('filled'));
             if (!isComplete) {
                 showToast('모든 빈칸을 채워주세요!', 'error');
                 return;
             }
 
             let allCorrect = false;
-
             if (item.opt === 1) {
-                const userAnswers = blanks.map(b => b.innerText.replace(/\s+/g, '')).sort();
-                const correctAnswers = blanks.map(b => b.dataset.answer.replace(/\s+/g, '')).sort();
+                const userAnswers = currentBlanks.map(b => b.innerText.replace(/\s+/g, '')).sort();
+                const correctAnswers = currentBlanks.map(b => b.dataset.answer.replace(/\s+/g, '')).sort();
                 allCorrect = userAnswers.every((val, i) => val === correctAnswers[i]);
-                blanks.forEach(b => { b.style.backgroundColor = allCorrect ? '#d4edda' : '#f8d7da'; });
+                currentBlanks.forEach(b => b.style.backgroundColor = allCorrect ? '#d4edda' : '#f8d7da');
             } else {
                 allCorrect = true;
-                blanks.forEach(blank => {
+                currentBlanks.forEach(blank => {
                     const userAnswer = blank.innerText.replace(/\s+/g, '');
                     const correctAnswer = blank.dataset.answer.replace(/\s+/g, '');
                     if (userAnswer === correctAnswer) {
@@ -299,7 +273,7 @@ const renderQuiz = () => {
                 updateHeaderScore();
                 showToast('오답입니다! 다시 풀어보세요. 🤔', 'error');
                 setTimeout(() => {
-                    blanks.forEach(blank => {
+                    currentBlanks.forEach(blank => {
                         blank.innerText = '?';
                         blank.classList.remove('filled');
                         blank.style.backgroundColor = '';

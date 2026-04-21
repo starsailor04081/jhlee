@@ -229,7 +229,6 @@ body {
 }
 
 .toast {
-    min-width: 250px;
     padding: 12px 24px;
     margin-top: 10px;
     border-radius: 8px;

@@ -261,3 +261,4 @@ body {
     /* 부드러운 삭제 효과를 위한 속성 */
     transition: opacity 0.4s ease, transform 0.4s ease;
 }
+.blank:active { outline: 2px dashed #007bff; }

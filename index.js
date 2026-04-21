@@ -92,7 +92,7 @@ const renderQuiz = () => {
         hintBtn.innerText = '💡 힌트';
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn-reset';
-        resetBtn.innerText = '🔄 리셋';
+        resetBtn.innerText = '🔄';
         qTopic.appendChild(hintBtn);
         qTopic.appendChild(resetBtn);
 

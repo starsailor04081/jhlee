@@ -37,5 +37,9 @@ const fixedLines = lines.map(line => {
 // 3. 변수 선언과 Export를 명시적으로 결합
 const finalFileContent = `const que = ${fixedLines.join('\n')};\n\nexport { que };`;
 
+if (fs.existsSync('./data_fixed.js')) {
+    fs.unlinkSync('./data_fixed.js');
+}
+
 fs.writeFileSync('./data_fixed.js', finalFileContent, 'utf8');
 console.log('✅ data_fixed.js 생성 완료! (변수 que 선언 포함)');

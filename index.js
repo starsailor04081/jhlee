@@ -159,15 +159,45 @@ const renderQuiz = () => {
         });
 
         // 힌트/리셋 로직은 동일
+        // 힌트 버튼 클릭 로직 수정
         hintBtn.onclick = (e) => {
             e.stopPropagation();
-            const currentHTML = qText.innerHTML;
-            qText.innerText = item.sentense;
+            const currentHTML = qText.innerHTML; // 현재 빈칸(? 상태) 유지된 HTML 저장
+            
+            // 1. 힌트용 문구 생성 로직
+            // 현재 카드 내의 모든 빈칸 요소를 가져옴
+            const blanksInCard = newCard.querySelectorAll('.blank');
+            let hintHTML = item.sentense; // 원본 문장에서 시작
+
+            // 모든 정답 키워드를 순회하며 강조 처리
+            blanksInCard.forEach(blank => {
+                const answer = blank.dataset.answer.trim();
+                const isFilled = blank.classList.contains('filled');
+                
+                // 정규식 생성 (특수문자 보호를 위해 escapeRegExp 사용)
+                const regex = new RegExp(escapeRegExp(answer), 'g');
+                
+                if (!isFilled) {
+                    // [핵심] 아직 못 맞춘 키워드: 노란 배경 + 빨간 글씨로 튀게 처리
+                    hintHTML = hintHTML.replace(regex, 
+                        `<span style="color: #e74c3c; font-weight: bold; background-color: #fff3cd; padding: 0 2px; border-radius: 3px; border-bottom: 2px solid #ffcc00;">${answer}</span>`
+                    );
+                } else {
+                    // 이미 맞춘 키워드: 초록색 글씨로만 표시 (구분용)
+                    hintHTML = hintHTML.replace(regex, 
+                        `<span style="color: #2ecc71; font-weight: bold;">${answer}</span>`
+                    );
+                }
+            });
+
+            qText.innerHTML = hintHTML; // 강조된 힌트 텍스트로 교체
             hintBtn.disabled = true;
-            let timeLeft = 3;
+
+            let timeLeft = 5;
             const timerSpan = document.createElement('span');
             timerSpan.style.fontSize = '12px';
             timerSpan.style.marginLeft = '5px';
+            timerSpan.style.color = '#ff4d4d'; // 타이머 색상 강조
             timerSpan.innerText = `(${timeLeft}s)`;
             hintBtn.appendChild(timerSpan);
 
@@ -176,9 +206,11 @@ const renderQuiz = () => {
                 timerSpan.innerText = `(${timeLeft}s)`;
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
-                    qText.innerHTML = currentHTML;
+                    qText.innerHTML = currentHTML; // 원래의 빈칸(<span>) 구조로 복구
                     timerSpan.remove();
                     hintBtn.disabled = false;
+                    
+                    // 힌트를 봤으므로 카드를 맨 뒤로 이동
                     mainContainer.appendChild(newCard);
                     showToast('힌트 확인! 맨 뒤로 이동합니다.', 'error');
                 }
@@ -226,6 +258,7 @@ const renderQuiz = () => {
         });
 
         // 제출 로직 (기존 opt 판별 로직 포함)
+      // 제출 로직
         submitBtn.onclick = () => {
             const currentBlanks = Array.from(newCard.querySelectorAll('.blank'));
             if (currentBlanks.length === 0) return;
@@ -237,26 +270,23 @@ const renderQuiz = () => {
             }
 
             let allCorrect = false;
+            // 1. 정답 판별 (기존 로직 유지)
             if (item.opt === 1) {
                 const userAnswers = currentBlanks.map(b => b.innerText.replace(/\s+/g, '')).sort();
                 const correctAnswers = currentBlanks.map(b => b.dataset.answer.replace(/\s+/g, '')).sort();
                 allCorrect = userAnswers.every((val, i) => val === correctAnswers[i]);
-                currentBlanks.forEach(b => b.style.backgroundColor = allCorrect ? '#d4edda' : '#f8d7da');
             } else {
                 allCorrect = true;
                 currentBlanks.forEach(blank => {
                     const userAnswer = blank.innerText.replace(/\s+/g, '');
                     const correctAnswer = blank.dataset.answer.replace(/\s+/g, '');
-                    if (userAnswer === correctAnswer) {
-                        blank.style.backgroundColor = '#d4edda';
-                    } else {
-                        blank.style.backgroundColor = '#f8d7da';
-                        allCorrect = false;
-                    }
+                    if (userAnswer !== correctAnswer) allCorrect = false;
                 });
             }
 
             if (allCorrect) {
+                // [정답 시] 기존 로직 동일
+                currentBlanks.forEach(b => b.style.backgroundColor = '#d4edda');
                 currentCorrectCount++;
                 solvedData.correctIds.push(index); 
                 saveProgress();
@@ -268,18 +298,56 @@ const renderQuiz = () => {
                     setTimeout(() => newCard.remove(), 400);
                 }, 500);
             } else {
+                // [오답 시] 정답 공개 및 5초 후 이동 로직
                 currentWrongCount++;
                 saveProgress();
                 updateHeaderScore();
-                showToast('오답입니다! 다시 풀어보세요. 🤔', 'error');
+                showToast('오답입니다! 5초 후 정답이 가려지고 맨 뒤로 이동합니다.', 'error');
+
+                // 1. 모든 빈칸에 정답 표시 및 오답 강조
+                currentBlanks.forEach(blank => {
+                    const userAnswer = blank.innerText.replace(/\s+/g, '');
+                    const correctAnswer = blank.dataset.answer.replace(/\s+/g, '');
+                    
+                    blank.innerText = blank.dataset.answer; // 정답으로 텍스트 교체
+                    blank.style.fontWeight = 'bold';
+                    
+                    if (userAnswer === correctAnswer) {
+                        blank.style.backgroundColor = '#d4edda'; // 맞춘 건 초록색
+                    } else {
+                        blank.style.backgroundColor = '#f8d7da'; // 틀린 건 빨간색
+                        blank.style.color = '#e74c3c';
+                    }
+                });
+
+                // 2. 버튼 비활성화 (중복 클릭 방지)
+                submitBtn.disabled = true;
+                let waitTime = 5;
+                submitBtn.innerText = `다시 풀기까지 ${waitTime}초...`;
+
+                const timer = setInterval(() => {
+                    waitTime--;
+                    submitBtn.innerText = `다시 풀기까지 ${waitTime}초...`;
+                    if (waitTime <= 0) clearInterval(timer);
+                }, 1000);
+
+                // 3. 5초 뒤 원래 상태로 복구하며 맨 아래로 이동
                 setTimeout(() => {
                     currentBlanks.forEach(blank => {
-                        blank.innerText = '?';
+                        blank.innerText = '?'; // 다시 물음표로
                         blank.classList.remove('filled');
                         blank.style.backgroundColor = '';
+                        blank.style.color = '';
+                        blank.style.fontWeight = 'normal';
                     });
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = '제출하기';
+                    
+                    // 맨 아래로 이동
                     mainContainer.appendChild(newCard);
-                }, 500);
+          
+                }, 5000);
             }
         };
 

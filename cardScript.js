@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_final_v11';
+const STORAGE_KEY = 'quiz_system_final_v12';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -14,7 +14,7 @@ const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 const wrongDisplay = document.getElementById('wrongCount');
 
-// --- 1. 저장 및 로드 (새로고침 시 유실 방지 및 정렬) ---
+// --- 1. 저장 및 로드 (유실 방지) ---
 function saveProgress() {
     const data = { quizStack, currentIdx, correctCount, totalAttempts };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -47,13 +47,19 @@ function loadProgress() {
 // --- 2. 유틸리티 함수 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
+// 오답 리스트 추출 로직 강화 (중복 원천 차단)
 function getRandomDistractors(excludeArray, count) {
-    const allPossible = que.flatMap(item => (Array.isArray(item.answer) ? item.answer : [item.answer]));
-    const uniqueOthers = [...new Set(allPossible.filter(ans => !excludeArray.includes(ans)))];
-    return shuffle(uniqueOthers).slice(0, count);
+    // 모든 문제의 answer를 단일 배열로 만들고 중복 제거
+    const allAnswers = que.flatMap(item => (Array.isArray(item.answer) ? item.answer : [item.answer]));
+    const uniquePool = [...new Set(allAnswers)];
+    
+    // 현재 문제의 '모든 정답' 후보군을 제외 (사용자가 선택한 1~4개뿐만 아니라 원본 정답 전체 제외)
+    const pureDistractors = uniquePool.filter(ans => !excludeArray.includes(ans));
+    
+    return shuffle(pureDistractors).slice(0, count);
 }
 
-// --- 3. 렌더링 엔진 (정답 1~4개, 보기 5개 고정) ---
+// --- 3. 렌더링 엔진 (무조건 보기 5개 생성) ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
@@ -80,17 +86,16 @@ function renderNextCard() {
             btn.onclick = () => { if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
         });
     } else {
+        // 정답 설정 (1~4개)
         const originalAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
-        
-        // [수정] 정답 개수를 1개 ~ 4개 사이로 랜덤하게 선택
         const maxTake = Math.min(originalAnswers.length, 4);
         const takeCount = Math.floor(Math.random() * maxTake) + 1;
         const selectedAnswers = shuffle([...originalAnswers]).slice(0, takeCount);
         
-        // 보기를 무조건 5개로 맞추기 위한 오답 개수 계산
-        const distractorCount = 5 - selectedAnswers.length;
-        const distractors = getRandomDistractors(originalAnswers, distractorCount);
+        // 오답 보충 (무조건 총합 5개가 되도록)
+        const distractors = getRandomDistractors(originalAnswers, 5 - selectedAnswers.length);
         
+        // 최종 보기 5개 (섞기)
         const finalChoices = shuffle([...selectedAnswers, ...distractors]);
 
         if (q.type === 'blank') {
@@ -121,7 +126,7 @@ function renderNextCard() {
     stage.appendChild(card);
 }
 
-// --- 4. 인터랙션 및 결과 로직 ---
+// --- 4. 로직 함수 (기존과 동일) ---
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -212,7 +217,6 @@ function showDone() {
     if (doneScreen) doneScreen.classList.add('visible');
 }
 
-// --- 초기화 ---
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();

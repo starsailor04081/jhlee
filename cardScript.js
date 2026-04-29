@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v9_final';
+const STORAGE_KEY = 'quiz_system_final_v11';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -14,6 +14,7 @@ const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 const wrongDisplay = document.getElementById('wrongCount');
 
+// --- 1. 저장 및 로드 (새로고침 시 유실 방지 및 정렬) ---
 function saveProgress() {
     const data = { quizStack, currentIdx, correctCount, totalAttempts };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -41,18 +42,18 @@ function loadProgress() {
         quizStack = [...wrongItems, nowCard, ...normalItems];
     }
     currentIdx = 0;
-    if (correctDisplay) correctDisplay.textContent = correctCount;
 }
 
+// --- 2. 유틸리티 함수 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
-function getRandomDistractors(excludeArray) {
+function getRandomDistractors(excludeArray, count) {
     const allPossible = que.flatMap(item => (Array.isArray(item.answer) ? item.answer : [item.answer]));
     const uniqueOthers = [...new Set(allPossible.filter(ans => !excludeArray.includes(ans)))];
-    // 여기서 섞고 미리 자르는 것이 가장 확실합니다.
-    return shuffle(uniqueOthers).slice(0, 3);
+    return shuffle(uniqueOthers).slice(0, count);
 }
 
+// --- 3. 렌더링 엔진 (정답 1~4개, 보기 5개 고정) ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
@@ -78,39 +79,49 @@ function renderNextCard() {
         card.querySelectorAll('.ox-btn').forEach(btn => {
             btn.onclick = () => { if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
         });
-    } else if (q.type === 'blank') {
-        const holeCandidateCount = Math.min(q.answer.length, 3);
-        const selectedCandidates = shuffle([...q.answer]).slice(0, holeCandidateCount);
-        let realAnswersInOrder = [];
-        const pattern = new RegExp(`(${selectedCandidates.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
-        const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
-        const distractors = getRandomDistractors(selectedCandidates);
-        const finalChoices = shuffle([...selectedCandidates, ...distractors]);
-        card.innerHTML = `
-            <div class="card-label">FILL IN THE BLANK</div>
-            <div class="card-main">${q.main}</div>
-            <div class="card-divider"></div>
-            <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
-            <div class="choices">${finalChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
-            <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>
-            <div class="result-badge"></div>`;
-        setupBlankLogic(card, realAnswersInOrder, q);
     } else {
-        // Multi-Select: 정답 리스트와 추출된 오답 3개만 결합
-        const distractors = getRandomDistractors(q.answer);
-        const finalChoices = shuffle([...q.answer, ...distractors]);
-        card.innerHTML = `
-            <div class="card-label">MULTI-SELECT</div>
-            <div class="card-main">${q.main}</div>
-            <div class="card-divider"></div>
-            <div class="choices">${finalChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
-            <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">답안 제출</button>
-            <div class="result-badge"></div>`;
-        setupMultiSelectLogic(card, q.answer, q);
+        const originalAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
+        
+        // [수정] 정답 개수를 1개 ~ 4개 사이로 랜덤하게 선택
+        const maxTake = Math.min(originalAnswers.length, 4);
+        const takeCount = Math.floor(Math.random() * maxTake) + 1;
+        const selectedAnswers = shuffle([...originalAnswers]).slice(0, takeCount);
+        
+        // 보기를 무조건 5개로 맞추기 위한 오답 개수 계산
+        const distractorCount = 5 - selectedAnswers.length;
+        const distractors = getRandomDistractors(originalAnswers, distractorCount);
+        
+        const finalChoices = shuffle([...selectedAnswers, ...distractors]);
+
+        if (q.type === 'blank') {
+            let realAnswersInOrder = [];
+            const pattern = new RegExp(`(${selectedAnswers.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
+            const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
+
+            card.innerHTML = `
+                <div class="card-label">FILL IN THE BLANK</div>
+                <div class="card-main">${q.main}</div>
+                <div class="card-divider"></div>
+                <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
+                <div class="choices">${finalChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
+                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>
+                <div class="result-badge"></div>`;
+            setupBlankLogic(card, realAnswersInOrder, q);
+        } else {
+            card.innerHTML = `
+                <div class="card-label">MULTI-SELECT</div>
+                <div class="card-main">${q.main}</div>
+                <div class="card-divider"></div>
+                <div class="choices">${finalChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
+                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">답안 제출</button>
+                <div class="result-badge"></div>`;
+            setupMultiSelectLogic(card, selectedAnswers, q);
+        }
     }
     stage.appendChild(card);
 }
 
+// --- 4. 인터랙션 및 결과 로직 ---
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -201,6 +212,7 @@ function showDone() {
     if (doneScreen) doneScreen.classList.add('visible');
 }
 
+// --- 초기화 ---
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();

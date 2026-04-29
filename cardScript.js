@@ -1,22 +1,22 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_final_fixed_v7';
+const STORAGE_KEY = 'quiz_system_v8_final';
 
-// 상태 관리 변수
+// 상태 관리
 let quizStack = [...que];
 let currentIdx = 0;
 let correctCount = 0;
 let totalAttempts = 0;
 let animating = false;
 
-// DOM 요소 캐싱
+// DOM 캐싱
 const stage = document.getElementById('stage');
 const progressBar = document.getElementById('progressBar');
 const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 const wrongDisplay = document.getElementById('wrongCount');
 
-// --- 1. 데이터 저장 및 로드 로직 ---
+// --- 1. 데이터 저장 및 로드 (새로고침 시 틀린 문제 우선 정렬) ---
 
 function saveProgress() {
     const data = {
@@ -39,21 +39,18 @@ function loadProgress() {
     const savedStack = data.quizStack;
     const sIdx = data.currentIdx;
 
-    // 현재 인덱스부터 끝까지의 남은 리스트
     const remaining = savedStack.slice(sIdx);
     
     if (remaining.length > 0) {
-        const nowCard = remaining[0]; // 새로고침 시 화면에 떠 있어야 할 문제 (예: 2번)
-        const others = remaining.slice(1); // 그 뒤의 대기열
+        const nowCard = remaining[0]; 
+        const others = remaining.slice(1); 
 
         const wrongItems = [];
         const normalItems = [];
         
-        // 이미 지나온 문제(0 ~ sIdx-1)의 식별자 추출
         const passedMains = new Set(savedStack.slice(0, sIdx).map(m => m.main));
 
         others.forEach(item => {
-            // 과거에 이미 등장했던 문제가 뒤에 또 있다면 '틀린 문제'임
             if (passedMains.has(item.main)) {
                 wrongItems.push(item);
             } else {
@@ -61,29 +58,30 @@ function loadProgress() {
             }
         });
 
-        // 재배치: [틀린 문제들] + [방금 풀던 문제] + [나머지]
+        // 정렬 순서: [과거에 틀렸던 것] + [새로고침 직전 문제] + [나머지]
         quizStack = [...wrongItems, nowCard, ...normalItems];
     }
     
-    currentIdx = 0; // 재배치했으므로 인덱스는 항상 0부터 시작
+    currentIdx = 0;
     if (correctDisplay) correctDisplay.textContent = correctCount;
 }
 
-// --- 2. 퀴즈 실행 관련 유틸리티 ---
+// --- 2. 유틸리티 함수 ---
 
 function shuffle(arr) { 
     return [...arr].sort(() => Math.random() - 0.5); 
 }
 
-function getRandomDistractors(fullAnswerArray) {
-    const allPossible = que
-        .filter(item => item.type === 'multi' || item.type === 'blank')
-        .flatMap(item => item.answer);
-    const unique = [...new Set(allPossible.filter(ans => !fullAnswerArray.includes(ans)))];
+// 오답 리스트를 안전하게 추출 (정답이 4개 이상일 때도 버그 없음)
+function getRandomDistractors(excludeArray) {
+    const allPossible = que.flatMap(item => 
+        (Array.isArray(item.answer) ? item.answer : [item.answer])
+    );
+    const unique = [...new Set(allPossible.filter(ans => !excludeArray.includes(ans)))];
     return shuffle(unique);
 }
 
-// --- 3. 카드 렌더링 엔진 ---
+// --- 3. 카드 렌더링 (Multi-Select 보기 과다 생성 버그 수정) ---
 
 function renderNextCard() {
     updateUI();
@@ -100,7 +98,6 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // A. OX 퀴즈 렌더링
     if (q.type === 'ox') {
         card.innerHTML = `
             <div class="card-label">OX QUIZ</div>
@@ -117,7 +114,6 @@ function renderNextCard() {
             btn.onclick = () => { if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
         });
 
-    // B. 빈칸 채우기(Blank) 렌더링
     } else if (q.type === 'blank') {
         const holeCandidateCount = Math.min(q.answer.length, 3);
         const selectedCandidates = shuffle([...q.answer]).slice(0, holeCandidateCount);
@@ -125,7 +121,8 @@ function renderNextCard() {
         const pattern = new RegExp(`(${selectedCandidates.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
         const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
         
-        const distractors = getRandomDistractors(selectedCandidates).slice(0, 4 - selectedCandidates.length);
+        // 빈칸용 오답 3개 고정
+        const distractors = getRandomDistractors(selectedCandidates).slice(0, 3);
         const finalChoices = shuffle([...selectedCandidates, ...distractors]);
         
         card.innerHTML = `
@@ -139,10 +136,13 @@ function renderNextCard() {
         `;
         setupBlankLogic(card, realAnswersInOrder, q);
 
-    // C. 객관식(Multi) 렌더링
     } else {
-        const selectedDistractors = getRandomDistractors(q.answer).slice(0, 4 - q.answer.length);
-        const finalChoices = shuffle([...q.answer, ...selectedDistractors]);
+        // [Multi-Select 버그 수정]
+        const correctAnswers = q.answer; 
+        // 오답을 고정적으로 3개만 추가 (마이너스 인덱스 방지)
+        const distractors = getRandomDistractors(correctAnswers).slice(0, 3); 
+        const finalChoices = shuffle([...correctAnswers, ...distractors]);
+        
         card.innerHTML = `
             <div class="card-label">MULTI-SELECT</div>
             <div class="card-main">${q.main}</div>
@@ -156,7 +156,7 @@ function renderNextCard() {
     stage.appendChild(card);
 }
 
-// --- 4. 타입별 인터랙션 로직 ---
+// --- 4. 인터랙션 및 결과 처리 ---
 
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
@@ -186,8 +186,7 @@ function setupBlankLogic(card, realAnswersInOrder, questionData) {
     });
 
     submitBtn.onclick = () => {
-        if (animating) return;
-        if (selectedTexts.includes(null)) { alert("모든 빈칸을 채워주세요."); return; }
+        if (animating || selectedTexts.includes(null)) return;
         const isCorrect = selectedTexts.every((val, idx) => val === realAnswersInOrder[idx]);
         handleResult(isCorrect, questionData, [...new Set(realAnswersInOrder)], selectedTexts);
     };
@@ -215,8 +214,6 @@ function setupMultiSelectLogic(card, correctList, questionData) {
     };
 }
 
-// --- 5. 결과 처리 및 UI 업데이트 ---
-
 function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
     animating = true;
     totalAttempts++;
@@ -236,11 +233,9 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
         card.classList.add('fly-away');
         badge.textContent = '⭕';
     } else {
-        // [원본 유지] 틀리면 맨 뒤로 추가
         quizStack.push(questionData); 
         card.classList.add('drop-away');
         badge.textContent = '❌';
-        if (wrongDisplay) wrongDisplay.textContent = 'RE';
     }
     badge.style.opacity = '1';
 
@@ -263,30 +258,23 @@ function updateUI() {
 function showDone() {
     if (stage) stage.style.display = 'none';
     const doneScreen = document.getElementById('doneScreen');
-    if (doneScreen) {
-        doneScreen.classList.add('visible');
-        document.getElementById('scoreText').textContent = `학습 완료! (총 시도: ${totalAttempts}회)`;
-    }
+    if (doneScreen) doneScreen.classList.add('visible');
 }
 
-// --- 6. 초기 실행 설정 ---
+// --- 5. 초기 실행 ---
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();
 
-    const resetBtn = document.getElementById('resetBtn');
-    if (resetBtn) {
-        resetBtn.onclick = () => {
-            if (confirm("모든 기록을 초기화하시겠습니까?")) {
-                localStorage.removeItem(STORAGE_KEY);
-                location.reload();
-            }
-        };
-    }
+    document.getElementById('resetBtn').onclick = () => {
+        if (confirm("학습 기록을 초기화하시겠습니까?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+    };
 });
 
-// 전역 리스타트
 window.restart = () => {
     localStorage.removeItem(STORAGE_KEY);
     location.reload();

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // 1. 파일 읽기 (data_fixed.js 내용 전체를 문자열로 가져옴)
-const filePath = path.join(__dirname, 'data_fixed.js');
+const filePath = path.join(__dirname, 'data_fixed_updated.js');
 
 try {
     const fileContent = fs.readFileSync(filePath, 'utf8');

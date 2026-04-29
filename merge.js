@@ -5,58 +5,75 @@ const inputPath = path.join(process.cwd(), 'data_fixed_updated.js');
 const outputPath = path.join(process.cwd(), 'data_final_que.js');
 
 try {
-    console.log("🚀 데이터 분석 시작...");
+    console.log("🚀 데이터 병합 분석 시작...");
     const content = fs.readFileSync(inputPath, 'utf8');
-    
-    // 데이터를 한 줄씩 쪼개서 처리 (정규표현식 과부하 방지)
-    const lines = content.split('\n');
-    const groupMap = new Map();
 
-    let currentMain = '';
-    let currentSentence = '';
+    // 1. 객체 단위로 완전히 분리 ({ ... })
+    // [수정] 비탐욕적 매칭을 통해 각 객체를 개별적으로 완벽히 쪼갭니다.
+    const entryRegex = /\{[\s\S]*?\}/g;
+    const allEntries = content.match(entryRegex);
 
-    console.log("🔍 라인별 스캐닝 중...");
-
-    for (let line of lines) {
-        // main 추출
-        if (line.includes('main:')) {
-            currentMain = line.split('main:')[1].split(',')[0].replace(/['"`,]/g, '').trim();
-        }
-        // sentense 또는 sentence 추출
-        if (line.includes('sentense:') || line.includes('sentence:')) {
-            const key = line.includes('sentense:') ? 'sentense:' : 'sentence:';
-            currentSentence = line.split(key)[1].split(',')[0].replace(/['"`]/g, '').trim();
-        }
-
-        // 한 객체의 정보가 다 모였을 때 (sub: 가 보통 마지막에 오므로 이를 기준으로 병합)
-        if (line.includes('sub:') && currentMain && currentSentence) {
-            if (!groupMap.has(currentMain)) {
-                groupMap.set(currentMain, new Set());
-            }
-            groupMap.get(currentMain).add(currentSentence);
-            
-            // 다음 객체를 위해 초기화
-            currentMain = '';
-            currentSentence = '';
-        }
+    if (!allEntries) {
+        throw new Error("데이터 객체를 찾을 수 없습니다. 형식을 확인하세요.");
     }
 
+    const groupMap = new Map();
+    const originalMainNameMap = new Map();
+    let totalCount = 0;
+
+    console.log(`🔍 총 ${allEntries.length}개의 객체 분석 중...`);
+
+    allEntries.forEach(entry => {
+        // [수정] 객체 내부에서 main과 sentence를 개별적으로 추출 (순서 상관 없음)
+        const mainMatch = entry.match(/main:\s*['"`](.*?)['"`]/);
+        // 'sentence'와 'sentense' 오타 모두 대응
+        const sentenceMatch = entry.match(/senten[sc]e:\s*['"`](.*?)['"`]/);
+
+        if (mainMatch && sentenceMatch) {
+            const rawMain = mainMatch[1];
+            const sentence = sentenceMatch[1].trim();
+
+            // 비교용 키 (대소문자/공백 무시)
+            const mergeKey = rawMain.toLowerCase().replace(/\s+/g, '').trim();
+
+            if (!groupMap.has(mergeKey)) {
+                groupMap.set(mergeKey, new Set());
+                originalMainNameMap.set(mergeKey, rawMain.trim());
+            }
+
+            groupMap.get(mergeKey).add(sentence);
+            totalCount++;
+        }
+    });
+
     // 2. 결과물 생성
-    console.log("📦 데이터 병합 및 파일 생성 중...");
     const queEntries = [];
-    for (const [main, sentences] of groupMap.entries()) {
+    for (const [key, sentences] of groupMap.entries()) {
         const mergedSentence = Array.from(sentences).join(' | ');
-        // 작은따옴표 이스케이프 처리 (데이터 내부에 ' 가 있을 경우 대비)
-        const safeSentence = mergedSentence.replace(/'/g, "\\'");
-        queEntries.push(`  { sentence: '${safeSentence}' }`);
+        const representativeName = originalMainNameMap.get(key);
+
+        // 특수문자 및 줄바꿈 안전 처리
+        const safeSentence = mergedSentence
+            .replace(/\\/g, "\\\\")
+            .replace(/'/g, "\\'")
+            .replace(/\r?\n|\r/g, " ")
+            .replace(/\s+/g, " ");
+
+        queEntries.push(`  { 
+    /* root: ${representativeName} */
+    sentence: '${safeSentence}' 
+  }`);
     }
 
     const finalFileContent = `const que = [\n${queEntries.join(',\n')}\n];\n\nexport default que;`;
     fs.writeFileSync(outputPath, finalFileContent, 'utf8');
 
     console.log("-----------------------------------------");
-    console.log(`✅ 완료! 총 ${groupMap.size}개의 그룹으로 병합되었습니다.`);
-    console.log(`📂 저장 위치: ${outputPath}`);
+    console.log(`✅ 병합 완료!`);
+    console.log(`- 읽어온 총 객체: ${allEntries.length}개`);
+    console.log(`- 실제 병합된 데이터: ${totalCount}개`);
+    console.log(`- 생성된 그룹: ${groupMap.size}개`);
+    console.log(`📂 결과 확인: ${outputPath}`);
     console.log("-----------------------------------------");
 
 } catch (error) {

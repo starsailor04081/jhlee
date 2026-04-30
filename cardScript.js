@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v24_re-stack_fixed';
+const STORAGE_KEY = 'quiz_system_v26_no_main_on_blank';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -35,22 +35,27 @@ function saveProgress() {
 function loadProgress() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
-    const data = JSON.parse(saved);
-    correctCount = data.correctCount;
-    totalAttempts = data.totalAttempts;
-    wrongCounts = data.wrongCounts || {};
     
-    if (data.issueMains) {
-        const savedMains = new Set(data.issueMains);
-        que.forEach(q => {
-            if (savedMains.has(q.main)) issueSet.add(q);
-        });
+    try {
+        const data = JSON.parse(saved);
+        quizStack = data.quizStack || [...que];
+        currentIdx = data.currentIdx || 0;
+        correctCount = data.correctCount || 0;
+        totalAttempts = data.totalAttempts || 0;
+        wrongCounts = data.wrongCounts || {};
+        
+        if (data.issueMains) {
+            const savedMains = new Set(data.issueMains);
+            que.forEach(q => {
+                if (savedMains.has(q.main)) issueSet.add(q);
+            });
+        }
+    } catch (e) {
+        console.error("데이터 로드 실패:", e);
     }
-    quizStack = data.quizStack || [...que];
-    currentIdx = data.currentIdx || 0;
 }
 
-// --- 2. 유틸리티 로직 ---
+// --- 2. 보기 생성 엔진 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
 function getRandomDistractors(excludeArray, count) {
@@ -82,7 +87,6 @@ function renderNextCard() {
     stage.innerHTML = '';
     animating = false;
 
-    // 인덱스가 스택 범위를 넘어가면 종료
     if (currentIdx >= quizStack.length) { showDone(); return; }
 
     const q = quizStack[currentIdx];
@@ -91,14 +95,14 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // 스와이프 이벤트
+    // 스와이프 감지 이벤트
     card.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
     card.addEventListener('touchend', e => { 
         touchEndX = e.changedTouches[0].screenX; 
         handleSwipe(card);
     }, {passive: true});
 
-    // 상단 바
+    // 상단 바 (클로버 + 이슈체크박스)
     const topBar = document.createElement('div');
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
@@ -133,11 +137,13 @@ function renderNextCard() {
     topBar.appendChild(issueLabel);
     card.prepend(topBar);
 
+    // [핵심 변경] Blank 타입일 경우 main 영역을 생성하지 않음
+    const mainHtml = (q.type === 'blank') ? '' : `<div class="card-main">${q.main}</div><div class="card-divider"></div>`;
+
     if (q.type === 'ox') {
         card.insertAdjacentHTML('beforeend', `
             <div class="card-label">OX QUIZ</div>
-            <div class="card-main">${q.main}</div>
-            <div class="card-divider"></div>
+            ${mainHtml}
             <div class="card-sentence" style="margin-bottom:20px; font-size:18px;">${q.sentence}</div>
             <div class="choices" style="display:flex; flex-direction: row; gap: 15px;">
                 ${q.fixedChoices.map(c => `<button class="choice-btn ox-btn" style="flex:1; height:80px; font-size:24px;">${c}</button>`).join('')}
@@ -146,47 +152,41 @@ function renderNextCard() {
         card.querySelectorAll('.ox-btn').forEach(btn => {
             btn.onclick = () => { if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
         });
-    } else {
-        const choicesHtml = q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('');
-        if (q.type === 'blank') {
-            let realAnswersInOrder = [];
-            const pattern = new RegExp(`(${q.fixedAnswers.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
-            const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
+    } else if (q.type === 'blank') {
+        let realAnswersInOrder = [];
+        const pattern = new RegExp(`(${q.fixedAnswers.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
+        const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
 
-            card.insertAdjacentHTML('beforeend', `
-                <div class="card-label">FILL IN THE BLANK</div>
-                <div class="card-main">${q.main}</div>
-                <div class="card-divider"></div>
-                <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
-                <div class="choices">${choicesHtml}</div>
-                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>
-                <div class="result-badge"></div>`);
-            setupBlankLogic(card, realAnswersInOrder, q);
-        } else {
-            card.insertAdjacentHTML('beforeend', `
-                <div class="card-label">MULTI-SELECT</div>
-                <div class="card-main">${q.main}</div>
-                <div class="card-divider"></div>
-                <div class="choices">${choicesHtml}</div>
-                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">답안 제출</button>
-                <div class="result-badge"></div>`);
-            setupMultiSelectLogic(card, q.fixedAnswers, q);
-        }
+        card.insertAdjacentHTML('beforeend', `
+            <div class="card-label">FILL IN THE BLANK</div>
+            ${mainHtml}
+            <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
+            <div class="choices">${q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
+            <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>
+            <div class="result-badge"></div>`);
+        setupBlankLogic(card, realAnswersInOrder, q);
+    } else {
+        // Multi-select
+        card.insertAdjacentHTML('beforeend', `
+            <div class="card-label">MULTI-SELECT</div>
+            ${mainHtml}
+            <div class="choices">${q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
+            <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">답안 제출</button>
+            <div class="result-badge"></div>`);
+        setupMultiSelectLogic(card, q.fixedAnswers, q);
     }
     stage.appendChild(card);
 }
 
-// --- 4. 스와이프 및 결과 로직 ---
+// --- 4. 스와이프 및 결과 처리 ---
 function handleSwipe(card) {
     if (!card.classList.contains('is-wrong-state') || animating) return;
-
     const swipeDistance = touchEndX - touchStartX;
     if (Math.abs(swipeDistance) > 50) {
         animating = true;
         card.classList.add('drop-away');
         setTimeout(() => {
-            // [중요] 오답을 뒤로 보냈으므로 현재 인덱스를 유지하거나 조정할 필요가 있음
-            // 이 버전에서는 handleResult에서 이미 Stack을 조작하므로 render만 호출
+            currentIdx++;
             saveProgress();
             renderNextCard();
         }, 800);
@@ -212,12 +212,11 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
         badge.style.opacity = '1';
         setTimeout(() => card.classList.add('fly-away'), 300);
         setTimeout(() => {
-            currentIdx++; // 맞히면 다음 인덱스로
+            currentIdx++;
             saveProgress();
             renderNextCard();
         }, 1100);
     } else {
-        // [오답 로직 수정]
         wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
         badge.textContent = '❌';
         badge.style.opacity = '1';
@@ -231,22 +230,15 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
             });
         }
 
-        // 현재 틀린 문제를 스택 맨 뒤로 복사본을 넣음
         quizStack.push({...questionData}); 
-        
-        card.insertAdjacentHTML('beforeend', `
-            <div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px;">
-                ← 스와이프하여 다음 문제로 →
-            </div>
-        `);
-        
+        card.insertAdjacentHTML('beforeend', `<div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px;">← 스와이프하여 다음 문제로 →</div>`);
         card.classList.add('is-wrong-state');
-        animating = false; // 사용자가 스와이프할 수 있게 함
-        // 인덱스를 여기서 올리지 않음. 스와이프 시 currentIdx++ 수행
+        animating = false; 
+        saveProgress();
     }
 }
 
-// --- 5. 버튼 로직 ---
+// --- 5. 로직 설정 ---
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -323,8 +315,8 @@ function showDone() {
             reporterArea.style.marginTop = '20px';
             reporterArea.innerHTML = `
                 <p style="font-size:14px; color:#ff4b2b; font-weight:bold;">⚠️ 이슈 문제 데이터 (${issueSet.size}건)</p>
-                <textarea readonly style="width:100%; height:120px; padding:10px; font-size:12px;">${JSON.stringify(issueData, null, 2)}</textarea>
-                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:10px; background:#444; color:#fff;">복사하기</button>
+                <textarea readonly style="width:100%; height:120px; padding:10px; font-size:12px; background:#f9f9f9;">${JSON.stringify(issueData, null, 2)}</textarea>
+                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:10px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer;">복사하기</button>
             `;
             doneTitle.after(reporterArea);
         }
@@ -343,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();
     document.getElementById('resetBtn').onclick = () => {
-        if (confirm("기록을 초기화하시겠습니까?")) {
+        if (confirm("모든 데이터를 초기화하고 처음부터 시작하시겠습니까?")) {
             localStorage.removeItem(STORAGE_KEY);
             location.reload();
         }

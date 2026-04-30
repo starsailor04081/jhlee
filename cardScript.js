@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v22_final_full';
+const STORAGE_KEY = 'quiz_system_v23_swipe_on_wrong';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -10,12 +10,16 @@ let animating = false;
 let wrongCounts = {}; 
 let issueSet = new Set(); 
 
+// 스와이프 감지용 변수
+let touchStartX = 0;
+let touchEndX = 0;
+
 const stage = document.getElementById('stage');
 const progressBar = document.getElementById('progressBar');
 const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 
-// --- 1. 데이터 저장 및 로드 (이슈 데이터 포함) ---
+// --- 1. 데이터 저장 및 로드 ---
 function saveProgress() {
     const issueMains = Array.from(issueSet).map(q => q.main);
     const data = { 
@@ -63,7 +67,7 @@ function loadProgress() {
     currentIdx = 0;
 }
 
-// --- 2. 보기 생성 엔진 ---
+// --- 2. 유틸리티 로직 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
 function getRandomDistractors(excludeArray, count) {
@@ -88,7 +92,7 @@ function prepareChoices(q) {
     }
 }
 
-// --- 3. 렌더링 엔진 ---
+// --- 3. 렌더링 엔진 & 스와이프 이벤트 등록 ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
@@ -102,7 +106,14 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // 상단 레이아웃 (클로버 + 이슈 체크박스)
+    // 터치 이벤트 리스너 추가 (스와이프 감지용)
+    card.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+    card.addEventListener('touchend', e => { 
+        touchEndX = e.changedTouches[0].screenX; 
+        handleSwipe(card, q);
+    }, {passive: true});
+
+    // 상단 바 (클로버 + 이슈체크)
     const topBar = document.createElement('div');
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
@@ -124,11 +135,9 @@ function renderNextCard() {
     issueLabel.style.fontSize = '12px';
     issueLabel.style.color = '#888';
     issueLabel.style.cursor = 'pointer';
-    issueLabel.innerHTML = `<input type="checkbox" id="issueChk"> 이슈문제`;
+    issueLabel.innerHTML = `<input type="checkbox"> 이슈문제`;
     const chk = issueLabel.querySelector('input');
-    
     if (issueSet.has(q)) chk.checked = true;
-    
     chk.onchange = () => {
         if (chk.checked) issueSet.add(q);
         else issueSet.delete(q);
@@ -139,6 +148,7 @@ function renderNextCard() {
     topBar.appendChild(issueLabel);
     card.prepend(topBar);
 
+    // 퀴즈 타입별 내부 렌더링 (OX, Blank, Multi)
     if (q.type === 'ox') {
         card.insertAdjacentHTML('beforeend', `
             <div class="card-label">OX QUIZ</div>
@@ -182,7 +192,78 @@ function renderNextCard() {
     stage.appendChild(card);
 }
 
-// --- 4. 인터랙션 로직 ---
+// --- 4. 스와이프 제어 로직 ---
+function handleSwipe(card, q) {
+    // 오답 상태이고 결과 애니메이션 중이 아닐 때만 스와이프 작동
+    if (!card.classList.contains('is-wrong-state') || animating) return;
+
+    const swipeDistance = touchEndX - touchStartX;
+    if (Math.abs(swipeDistance) > 50) { // 50px 이상 밀었을 때
+        animating = true;
+        card.classList.add('drop-away');
+        setTimeout(() => {
+            currentIdx++;
+            saveProgress();
+            renderNextCard();
+        }, 800);
+    }
+}
+
+// --- 5. 결과 처리 ---
+function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
+    animating = true;
+    totalAttempts++;
+    const card = stage.querySelector('.card');
+    const badge = card.querySelector('.result-badge');
+    const allBtns = card.querySelectorAll('.choice-btn, .multi-btn');
+
+    allBtns.forEach(btn => {
+        btn.style.pointerEvents = 'none';
+        if (correctToHighlight.includes(btn.textContent)) btn.classList.add('correct');
+        else if (userSelections.includes(btn.textContent)) btn.classList.add('wrong');
+    });
+
+    if (isSuccess) {
+        // [정답] 기존 로직 유지 (자동 전환)
+        correctCount++;
+        badge.textContent = '⭕';
+        badge.style.opacity = '1';
+        setTimeout(() => card.classList.add('fly-away'), 300);
+        setTimeout(() => {
+            currentIdx++;
+            saveProgress();
+            renderNextCard();
+        }, 1100);
+    } else {
+        // [오답] 스와이프 대기 모드 진입
+        wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
+        badge.textContent = '❌';
+        badge.style.opacity = '1';
+
+        // 빈칸 채워주기
+        if (questionData.type === 'blank') {
+            const holes = card.querySelectorAll('.hole');
+            holes.forEach((hole, idx) => {
+                hole.textContent = correctToHighlight[idx];
+                hole.style.color = "#4CAF50";
+                hole.style.borderBottom = "2px solid #4CAF50";
+            });
+        }
+
+        // 스와이프 안내 문구 추가
+        card.insertAdjacentHTML('beforeend', `
+            <div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px; animation: blink 1.5s infinite;">
+                ← 스와이프하여 다음 문제로 →
+            </div>
+        `);
+        
+        // 중요: animating을 false로 풀어줘야 사용자가 스와이프할 수 있음
+        card.classList.add('is-wrong-state');
+        animating = false; 
+    }
+}
+
+// (나머지 UI 및 종료 로직 동일)
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -234,56 +315,6 @@ function setupMultiSelectLogic(card, correctList, questionData) {
     };
 }
 
-// --- 5. 결과 처리 ---
-function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
-    animating = true;
-    totalAttempts++;
-    const card = stage.querySelector('.card');
-    const badge = card.querySelector('.result-badge');
-    const allBtns = card.querySelectorAll('.choice-btn, .multi-btn');
-
-    allBtns.forEach(btn => {
-        btn.style.pointerEvents = 'none';
-        if (correctToHighlight.includes(btn.textContent)) btn.classList.add('correct');
-        else if (userSelections.includes(btn.textContent)) btn.classList.add('wrong');
-    });
-
-    if (!isSuccess && questionData.type === 'blank') {
-        const holes = card.querySelectorAll('.hole');
-        holes.forEach((hole, idx) => {
-            hole.textContent = correctToHighlight[idx];
-            hole.style.color = "#4CAF50";
-            hole.style.borderBottom = "2px solid #4CAF50";
-        });
-    }
-
-    let animationTriggerDelay; 
-    let nextRenderDelay;      
-
-    if (isSuccess) {
-        animationTriggerDelay = 300; 
-        nextRenderDelay = 800; 
-        correctCount++;
-        badge.textContent = '⭕';
-        setTimeout(() => card.classList.add('fly-away'), animationTriggerDelay);
-    } else {
-        wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
-        animationTriggerDelay = 5000; 
-        nextRenderDelay = 5800; 
-        quizStack.push(questionData);
-        badge.textContent = '❌';
-        setTimeout(() => card.classList.add('drop-away'), animationTriggerDelay);
-    }
-    
-    badge.style.opacity = '1';
-
-    setTimeout(() => {
-        currentIdx++;
-        saveProgress();
-        renderNextCard();
-    }, nextRenderDelay);
-}
-
 function updateUI() {
     if (!progressBar || !counter) return;
     const total = que.length;
@@ -293,27 +324,23 @@ function updateUI() {
     if (correctDisplay) correctDisplay.textContent = correctCount;
 }
 
-// --- 6. 종료 화면 및 이슈 데이터 출력 ---
 function showDone() {
     stage.style.display = 'none';
     const doneScreen = document.getElementById('doneScreen');
     const doneTitle = document.getElementById('doneTitle');
-    
     if (doneScreen && doneTitle) {
         doneScreen.classList.add('visible');
-        
         if (issueSet.size > 0) {
             const issueData = Array.from(issueSet).map(item => {
                 const { fixedChoices, fixedAnswers, ...cleanItem } = item;
                 return cleanItem;
             });
-            
             const reporterArea = document.createElement('div');
             reporterArea.style.marginTop = '20px';
             reporterArea.innerHTML = `
-                <p style="font-size:14px; color:#ff4b2b; font-weight:bold;">⚠️ 체크된 이슈 문제 데이터 (${issueSet.size}건)</p>
-                <textarea readonly style="width:100%; height:150px; padding:10px; font-family:monospace; font-size:12px; border:1px solid #ddd; border-radius:5px; background:#f9f9f9; color:#333; margin-top:5px;">${JSON.stringify(issueData, null, 2)}</textarea>
-                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:12px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">이슈 데이터 복사하기</button>
+                <p style="font-size:14px; color:#ff4b2b; font-weight:bold;">⚠️ 이슈 문제 데이터 (${issueSet.size}건)</p>
+                <textarea readonly style="width:100%; height:120px; padding:10px; font-size:12px; background:#f9f9f9; border:1px solid #ddd;">${JSON.stringify(issueData, null, 2)}</textarea>
+                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:10px; background:#444; color:#fff;">복사하기</button>
             `;
             doneTitle.after(reporterArea);
         }
@@ -325,11 +352,7 @@ window.copyIssueData = (btn) => {
     txt.select();
     document.execCommand('copy');
     btn.textContent = "복사 완료!";
-    btn.style.background = "#4CAF50";
-    setTimeout(() => {
-        btn.textContent = "이슈 데이터 복사하기";
-        btn.style.background = "#444";
-    }, 2000);
+    setTimeout(() => btn.textContent = "복사하기", 2000);
 };
 
 document.addEventListener('DOMContentLoaded', () => {

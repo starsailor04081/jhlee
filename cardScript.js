@@ -1,6 +1,7 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v21_issue_reporter';
+// 키값을 고정하여 새로고침 시에도 동일한 저장소를 바라보게 합니다.
+const STORAGE_KEY = 'quiz_stable_system_v35';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -15,40 +16,58 @@ const progressBar = document.getElementById('progressBar');
 const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 
-// --- 1. 데이터 저장 및 로드 ---
+// --- 1. 저장 및 스마트 복구 로직 ---
 function saveProgress() {
-    const data = { quizStack, currentIdx, correctCount, totalAttempts, wrongCounts };
+    const issueMains = Array.from(issueSet).map(q => q.main);
+    const data = { 
+        quizStack, 
+        currentIdx, 
+        correctCount, 
+        totalAttempts, 
+        wrongCounts,
+        issueMains 
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 function loadProgress() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
-    const data = JSON.parse(saved);
-    correctCount = data.correctCount;
-    totalAttempts = data.totalAttempts;
-    wrongCounts = data.wrongCounts || {};
-    const savedStack = data.quizStack;
-    const sIdx = data.currentIdx;
-    const remaining = savedStack.slice(sIdx);
-    if (remaining.length > 0) {
-        const nowCard = remaining[0]; 
-        const others = remaining.slice(1); 
-        const wrongItems = [];
-        const normalItems = [];
-        const passedMains = new Set(savedStack.slice(0, sIdx).map(m => m.main));
-        others.forEach(item => {
-            if (passedMains.has(item.main)) wrongItems.push(item);
-            else normalItems.push(item);
-        });
-        quizStack = [...wrongItems, nowCard, ...normalItems];
-    }
-    currentIdx = 0;
+    
+    try {
+        const data = JSON.parse(saved);
+        wrongCounts = data.wrongCounts || {};
+        correctCount = data.correctCount || 0;
+        totalAttempts = data.totalAttempts || 0;
+        
+        // [핵심] 새로고침 시: 틀린 기록(♣)이 있는 가장 첫 번째 원본 데이터 번호를 찾습니다.
+        let firstWrongInQueIdx = -1;
+        for(let i = 0; i < que.length; i++) {
+            if((wrongCounts[que[i].main] || 0) > 0) {
+                firstWrongInQueIdx = i;
+                break;
+            }
+        }
+
+        if (firstWrongInQueIdx !== -1) {
+            // 틀린 문제가 있다면 그 번호부터 다시 시작 (스택 초기화)
+            currentIdx = firstWrongInQueIdx;
+            quizStack = [...que]; 
+        } else {
+            // 틀린 게 없다면 마지막 풀던 위치로
+            currentIdx = data.currentIdx || 0;
+            quizStack = data.quizStack || [...que];
+        }
+
+        if (data.issueMains) {
+            const savedMains = new Set(data.issueMains);
+            que.forEach(q => { if (savedMains.has(q.main)) issueSet.add(q); });
+        }
+    } catch (e) { console.error("Data Load Error", e); }
 }
 
-// --- 2. 보기 생성 엔진 ---
+// --- 2. 렌더링 보조 엔진 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
-
 function getRandomDistractors(excludeArray, count) {
     const allAnswers = que.flatMap(item => (Array.isArray(item.answer) ? item.answer : [item.answer]));
     const uniquePool = [...new Set(allAnswers.filter(ans => !excludeArray.includes(ans)))];
@@ -71,7 +90,7 @@ function prepareChoices(q) {
     }
 }
 
-// --- 3. 렌더링 엔진 ---
+// --- 3. 메인 렌더링 (기존 CSS 유지용 구조) ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
@@ -83,10 +102,11 @@ function renderNextCard() {
     prepareChoices(q);
 
     const card = document.createElement('div');
-    card.className = 'card active';
+    card.className = 'card active'; // 기존 CSS의 .card 클래스 활용
 
     // [상단 레이아웃] 클로버와 이슈 체크박스
     const topBar = document.createElement('div');
+    topBar.className = 'card-top-bar'; // 기존 CSS가 없으면 style 수동 적용 가능
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
     topBar.style.alignItems = 'center';
@@ -94,20 +114,14 @@ function renderNextCard() {
 
     const cloverContainer = document.createElement('div');
     const wCount = wrongCounts[q.main] || 0;
-    for (let i = 0; i < wCount; i++) {
-        const clover = document.createElement('span');
-        clover.textContent = '♣';
-        clover.style.fontSize = '10px';
-        clover.style.color = '#ff4b2b';
-        clover.style.marginRight = '2px';
-        cloverContainer.appendChild(clover);
+    for(let i=0; i<wCount; i++) {
+        const span = document.createElement('span');
+        span.textContent = '♣'; span.style.color = 'red'; span.style.fontSize = '12px';
+        cloverWrap.appendChild(span);
     }
 
     const issueLabel = document.createElement('label');
-    issueLabel.style.fontSize = '12px';
-    issueLabel.style.color = '#888';
-    issueLabel.style.cursor = 'pointer';
-    issueLabel.innerHTML = `<input type="checkbox" id="issueChk"> 이슈문제`;
+    issueLabel.innerHTML = `<input type="checkbox"> 이슈`;
     const chk = issueLabel.querySelector('input');
     if (issueSet.has(q)) chk.checked = true;
     chk.onchange = (e) => {
@@ -137,33 +151,26 @@ function renderNextCard() {
             };
         });
     } else {
-        const choicesHtml = q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('');
-        if (q.type === 'blank') {
-            let realAnswersInOrder = [];
-            const pattern = new RegExp(`(${q.fixedAnswers.map(s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})`, 'g');
-            const processedSentence = q.sentence.replace(pattern, (match) => { realAnswersInOrder.push(match); return `<span class="hole">____</span>`; });
-
-            card.insertAdjacentHTML('beforeend', `
-                <div class="card-label">FILL IN THE BLANK</div>
-                <div class="card-main">${q.main}</div>
-                <div class="card-divider"></div>
-                <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
-                <div class="choices">${choicesHtml}</div>
-                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>
-                <div class="result-badge"></div>`);
-            setupBlankLogic(card, realAnswersInOrder, q);
-        } else {
-            card.insertAdjacentHTML('beforeend', `
-                <div class="card-label">MULTI-SELECT</div>
-                <div class="card-main">${q.main}</div>
-                <div class="card-divider"></div>
-                <div class="choices">${choicesHtml}</div>
-                <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">답안 제출</button>
-                <div class="result-badge"></div>`);
-            setupMultiSelectLogic(card, q.fixedAnswers, q);
-        }
+        innerHTML += `
+            <div class="choices">${q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('')}</div>
+            <button class="submit-btn" id="submitBtn">답안 제출</button>
+        `;
     }
+    
+    innerHTML += `<div class="result-badge"></div>`;
+    card.insertAdjacentHTML('beforeend', innerHTML);
     stage.appendChild(card);
+
+    // 이벤트 바인딩
+    if(q.type === 'ox') {
+        card.querySelectorAll('.ox-btn').forEach(btn => {
+            btn.onclick = () => { if(!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
+        });
+    } else if(q.type === 'blank') {
+        setupBlankLogic(card, realAnswers, q);
+    } else {
+        setupMultiSelectLogic(card, q.fixedAnswers, q);
+    }
 }
 
 // --- 4. 인터랙션 로직 ---
@@ -226,7 +233,6 @@ function setupMultiSelectLogic(card, correctList, questionData) {
 // --- 5. 결과 처리 (핵심 수정 부분) ---
 function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
     animating = true;
-    totalAttempts++;
     const card = stage.querySelector('.card');
     const badge = card.querySelector('.result-badge');
     const allBtns = card.querySelectorAll('.choice-btn, .multi-btn, #submitBtn');
@@ -286,15 +292,10 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
 }
 
 function updateUI() {
-    if (!progressBar || !counter) return;
-    const total = que.length;
-    const progress = Math.min((correctCount / total) * 100, 100);
-    progressBar.style.width = `${progress}%`;
-    counter.textContent = `${correctCount} / ${total}`;
-    if (correctDisplay) correctDisplay.textContent = correctCount;
+    if(progressBar) progressBar.style.width = `${(correctCount / que.length) * 100}%`;
+    if(counter) counter.textContent = `${correctCount} / ${que.length}`;
 }
 
-// --- 6. 종료 화면 및 이슈 데이터 출력 ---
 function showDone() {
     stage.style.display = 'none';
     const doneScreen = document.getElementById('doneScreen');
@@ -330,12 +331,8 @@ window.copyIssueData = (btn) => {
 document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();
-    document.getElementById('resetBtn').onclick = () => {
-        if (confirm("기록을 초기화하시겠습니까?")) {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
-        }
-    };
+    const rb = document.getElementById('resetBtn');
+    if(rb) rb.onclick = () => { if(confirm("리셋하시겠습니까?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } };
 });
 
 window.restart = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };

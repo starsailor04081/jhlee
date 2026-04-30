@@ -145,8 +145,6 @@ function renderNextCard() {
 
             card.insertAdjacentHTML('beforeend', `
                 <div class="card-label">FILL IN THE BLANK</div>
-                <div class="card-main">${q.main}</div>
-                <div class="card-divider"></div>
                 <div class="sentence-area" style="line-height:2.5; font-size:18px; margin-bottom:20px;">${processedSentence}</div>
                 <div class="choices">${choicesHtml}</div>
                 <button class="submit-btn" id="submitBtn" style="margin-top:15px; width:100%;">정답 제출</button>

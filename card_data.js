@@ -387,10 +387,10 @@ export const que = [
         answer: "O"
     },
     {
-        type: "blank",
+        type: "multi",
         main: "예금자보호 대상 금융기관",
         sentence: "예금자보험 가입 금융기관: 은행, 투자매매·중개업자, 보험사, 종합금융회사, 상호저축은행",
-        answer: ["종합금융회사", "투자매매"]
+        answer: ["은행", "투자매매·중개업자", "보험사", "종합금융회사", "상호저축은행"]
     },
     {
         type: "blank",
@@ -871,10 +871,10 @@ export const que = [
         sentence: "부동산 펀드는 부동산 개발산업 영위 법인에 대해서 금전의 대여를 할 수 있다.",
         answer: "O"
     }, {
-        type: "multi",
+        type: "blank",
         main: "부동산 투자회사별 최저 자본금",
         sentence: "자기관리 부동산 투자회사의 최저 자본금 : 70억, 위탁관리 부동산 투자회사 최저 자본금: 50억",
-        answer: ["70억", "50억"]
+        answer: ["자기관리", "70억", "50억", "위탁관리"]
     }, {
         type: "blank",
         main: "부동산의 부동성과 현상",
@@ -931,15 +931,15 @@ export const que = [
         sentence: "부동산투자: 부동산투자회사(REITs)는 1인당 지분소유가 50%제한, 부동산 펀드는 제한이 없다.",
         answer: ["50%"]
     }, {
-        type: "multi",
+        type: "blank",
         main: "REITs의 자산 구성 및 보고 요건",
         sentence: "부동산투자회사(REITs) 업무 및 자산운용규제 : 최저자본금 준비기간 후 총 자산의 70%는 부동산이야한다. 결산투자보고서는 매 결산 종료일 후 90일 내에 국토교통부장관과 금융위원회에게 제출한다.",
-        answer: ["70%", "90일"]
+        answer: ["70%","부동산", "90일","결산투자보고서"]
     }, {
         type: "blank",
         main: "기업 구조조정 REITs의 배당 요건",
         sentence: "기업 구조조정 부동산 투자회사(REITs)또한 이익배당 한도의 90%이상 주주배당이 필요하다.",
-        answer: ["90%"]
+        answer: ["90%","이익배당"]
     }, {
         type: "ox",
         main: "토지 매입 시 계약 원칙",
@@ -1194,7 +1194,7 @@ export const que = [
         type: "multi",
         main: "금지되지 않는 집합투자재산 매수 대상",
         sentence: "인수일기준 3개월 경과후 매수, 국채, 지방채, 통안채를 집합투자재산으로 매수하는 행위는 금지되지 않는다.",
-        answer: ["3개월", "국채", "지방채", "통안채"]
+        answer: ["국채", "지방채", "통안채","인수일기준 3개월 경과후 매수"]
     }, {
         type: "ox",
         main: "투자설명서 변경과 공시",
@@ -1378,15 +1378,15 @@ export const que = [
     }, {
         type: "blank",
         main: "수익증권 매수 청구 기한",
-        sentence: "투자신탁 수익자 총회: 반대의사 통지시 총회 결의일부터 20이 이내 자기소유 수익증권 매수 청구",
-        answer: ["20이"]
+        sentence: "투자신탁 수익자 총회: 반대의사 통지시 총회 결의일부터 20일 이내 자기소유 수익증권 매수 청구",
+        answer: ["매수청구","20일 이내"]
     }, {
         type: "ox",
         main: "종류형 집합투자기구의 보수 구조",
         sentence: "종류형 집합투자기구 : 판매보수, 운용보수가 차등화 지급되지 않음",
         answer: "X"
     }, {
-        type: "multi",
+        type: "blank",
         main: "환매 대금 지급 기한 및 예외",
         sentence: "집합투자증권 환매: 청구 받은날 부터 15일 이내 지급이원칙이나, 시장성 없는 상품에 10%, 외화자산에 50%이상 투자한 경우 15일 초과 가능하다",
         answer: ["15일", "10%", "50%"]
@@ -1484,7 +1484,7 @@ export const que = [
         type: "multi",
         main: "글로벌 매크로 전략의 특징",
         sentence: "글로벌매크로 전략은 세계 거시경제 현황분석을 통해 수익을 포착하고, 투자지역, 자산군이 다양하다. 또한 절대 수익을 추구하는것이 골자이며, 예측시기와 정확성에 따라 성과가 좌우된다.",
-        answer: ["투자지역", "자산군"]
+        answer: ["절대 수익을 추구", "투자지역, 자산군이 다양"," 예측시기와 정확성에 따라 성과가 좌우","거시경제 현황분석"]
     },
     {
         type: "blank",
@@ -1620,7 +1620,7 @@ export const que = [
         sentence: "ADR발행은 발행기업이 미국 증시에 상장되기를 원하여 발행 및 상장관련 비용을 부담하는 sponsored DR형태가 일반적이다.",
         answer: ["sponsored DR"]
     }, {
-        type: "multi",
+        type: "blank",
         main: "GDR과 EDR의 발행 시장",
         sentence: "GDR: 미국과 미국이외의 시장에 동시발행한다. EDR: 미국이외의 시장에 발행한다",
         answer: ["GDR", "EDR"]
@@ -1743,8 +1743,8 @@ export const que = [
     }, {
         type: "blank",
         main: "순자본비율 산정 기준",
-        sentence: "2. 순자본비율 사정의 기초가 되는 자산, 부채, 자본은 연결재무제표에 계상된 장부가액을 기준으로 한다",
-        answer: ["연결재무제표"]
+        sentence: "2. 순자본비율 사정의 기초가 되는 자산, 부채, 자본은 연결재무제표에 계산된 장부가액을 기준으로 한다",
+        answer: ["연결재무제표","장부가액"]
     }, {
         type: "blank",
         main: "레버리지비율 산출",
@@ -2044,13 +2044,13 @@ export const que = [
         answer: ["체계적위험"]
     },
     {
-        type: "multi",
+        type: "blank",
         main: "시계열모형 과정",
         sentence: "시계열모형 과정: 식별 -> 모수측정 -> 검정 -> 예측이행",
         answer: ["식별", "모수측정", "검정", "예측이행"]
     },
     {
-        type: "multi",
+        type: "blank",
         main: "거시경제 계량모형 절차",
         sentence: "거시경제 계량모형 절차: 규정 → 추정 → 검정 → 시뮬레이션",
         answer: ["규정", "추정", "검정", "시뮬레이션"]
@@ -2140,10 +2140,10 @@ export const que = [
         answer: "O"
     },
     {
-        type: "multi",
-        main: "의결공시권 대상 기준",
+        type: "ox",
+        main: "의결공시권 대상법인",
         sentence: "의결공시권 대상법인은 집합투자재산의 5% 이상 혹은 집합투자 재산으로 100억이 이상 소유하는 주식의 발행인이다.",
-        answer: ["5% 이상", "100억이 이상"]
+        answer: ["O"]
     },
     {
         type: "multi",
@@ -2194,7 +2194,7 @@ export const que = [
         sentence: "액티브 펀드의 수익편차는 패시브 펀드보다 크다",
         answer: "O"
     }, {
-        type: "multi",
+        type: "blank",
         main: "펀드 운용실적 공시 요건",
         sentence: "펀드운용실적: 설립일 1년이상, 순자산총액 100억이상 펀드",
         answer: ["1년이상", "100억이상"]
@@ -2224,7 +2224,7 @@ export const que = [
         sentence: "환매 수수료는 회수금액 산정시 포함된다",
         answer: "O"
     }, {
-        type: "multi",
+        type: "blank",
         main: "환매대금 지급 지연 요건",
         sentence: "환매청구일 15일 이내 환매대금을 지급하는것이 원칙이나, 시장성이 없는 자산에 10%, 외화자산에 50% 이상 투자하고있는 경우는 15일을 초과해 환매할 수 있다.",
         answer: ["10%", "50%"]
@@ -2261,7 +2261,7 @@ export const que = [
     }, {
         type: "blank",
         main: "자산가치 면역전략의 정의",
-        sentence: "자산가치 면역전략: 자산 시장가치 가중 듀레이션과 부채 시강자치 가중 듀레이션이 일치하여 순자산 가치의 변동성이 최소화 된것을 말한다.",
+        sentence: "자산가치 면역전략: 자산 시장가치 가중 듀레이션과 부채 시장가치 가중 듀레이션이 일치하여 순자산 가치의 변동성이 최소화 된것을 말한다.",
         answer: ["듀레이션", "변동성"]
     }, {
         type: "multi",
@@ -2269,7 +2269,7 @@ export const que = [
         sentence: "자산 집단이 가져야할 기본성격: 베타성, 분산가능성, 포괄성, 충분성, 동결성",
         answer: ["베타성", "분산가능성", "포괄성", "충분성", "동결성"]
     }, {
-        type: "multi",
+        type: "blank",
         main: "전략적 자산배분 실행 단계",
         sentence: "전략적 자산배분 실행단계 1. 투자자의 투자목적 및 투자 제약조건 파악> 2.자산 집단의 선택 > 3.자산 종류별 기대수익, 위험, 상관관계 추정 > 4. 최적 자산의 구성선택",
         answer: ["제약조건 파악", "자산 집단의 선택", "기대수익, 위험, 상관관계 추정", "최적 자산의 구성선택"]
@@ -2279,7 +2279,7 @@ export const que = [
         sentence: "전략적 자산배분: 처음구성한 자산배분을 변경하지 않는 전략",
         answer: "O"
     }, {
-        type: "multi",
+        type: "blank",
         main: "자산운용과정 순서",
         sentence: "자산운용과정 : 자산배분 -> 스타일배분 -> 증권선택",
         answer: ["자산배분", "스타일배분", "증권선택"]
@@ -2484,7 +2484,7 @@ export const que = [
         type: "blank",
         main: "포지션별 세타값",
         sentence: "콜옵션 매수포지션 세타값은 음수(-)이고, 풋옵션 매도포지션 세타값은 양수(+)이다.",
-        answer: ["음수", "양수"]
+        answer: ["음수(-)", "양수(+)"]
     }, {
         type: "ox",
         main: "주가 국면별 베타 성과",
@@ -2980,7 +2980,7 @@ export const que = [
         type: "blank",
         main: "이동평균선의 완만함",
         sentence: "이동평균선은 분석기간이 길면 완만해진다.",
-        answer: ["완만해진다"]
+        answer: [" 분석기간이 길면","완만해진다"]
     },
     {
         type: "blank",
@@ -3058,7 +3058,7 @@ export const que = [
         type: "blank",
         main: "Credit Derivatives",
         sentence: "Credit Derivatives: 신용위험도와 시장위험도를 거래 상대방에게 전가시키는 신용 파생상품이다",
-        answer: ["Credit Derivatives"]
+        answer: ["Credit Derivatives", "신용 파생상품"]
     }, {
         type: "multi",
         main: "기대손실 계산 정보",
@@ -3393,8 +3393,8 @@ export const que = [
     {
         type: "blank",
         main: "신용위험과 투자성 요소",
-        sentence: "신용위험에 의한 손실은 비시장성 요소이고, 투자성엔 비 시장성 요소가 배제가된다.",
-        answer: ["비시장성", "비 시장성"]
+        sentence: "신용위험에 의한 손실은 비시장성 요소이고, 투자성엔 비시장성 요소가 배제가된다.",
+        answer: ["비시장성","신용위험에 의한 손실"]
     },
     {
         type: "blank",
@@ -3471,7 +3471,7 @@ export const que = [
     {
         type: "blank",
         main: "OBV의 정의",
-        sentence: "OBV: 주가가 전일에 비해 상승한날읙 거래량 누계에서 하락한 날의 누계를 차감하여 이를 매일 누적적으로 집계 및 도표화한 지표",
+        sentence: "OBV: 주가가 전일에 비해 상승한날의 거래량 누계에서 하락한 날의 누계를 차감하여 이를 매일 누적적으로 집계 및 도표화한 지표",
         answer: ["거래량", "하락한 날"]
     },
     {
@@ -3499,10 +3499,10 @@ export const que = [
         answer: ["호가의 차이"]
     },
     {
-        type: "multi",
+        type: "blank",
         main: "리스크 관리 조직 독립성",
         sentence: "리스크 관리: front, middle, back office는 각각 독립적으로 운영해야한다.",
-        answer: ["front", "middle", "back office"]
+        answer: ["front", "middle", "back office", "독립적"]
     },
     {
         type: "multi",
@@ -3568,7 +3568,7 @@ export const que = [
         type: "multi",
         main: "금융감독원장 검사 범위",
         sentence: "금융감독원장 실시 검사: 금융기관의 업무, 재산상황, 특정부분은 검사가능",
-        answer: ["업무", "재산상황", "특정부분"]
+        answer: ["금융기관의 업무", "재산상황", "특정부분   "]
     },
     {
         type: "ox",
@@ -3690,7 +3690,7 @@ export const que = [
         answer: ["해당법인 계열회사", "법령상 허가권한을 가진자", "정보를 받은자"],
     },
     {
-        type: "multi",
+        type: "blank",
         main: "불건전 행위 금지조항 사례",
         sentence: "불건전 행위 금지조항: <br> 1. 매수 수수료를 증가시키기위한 매수 <br> 2.일정기간동안 월,일단위로 매수하는 조건, 약정조건이있는 곳에 운용하는것 <br>3. 정당한 근거없이 투자중개업자 간 수수료를 차별하는 행위",
         answer: ["수수료를 증가", "수수료를 차별"],
@@ -3889,10 +3889,10 @@ export const que = [
         sentence: "패시브 운용은 벤치마크 지수를 추적하지만 추적오차의 한계로 모방이 어렵다.",
         answer: ["추적오차"]
     }, {
-        type: "multi",
+        type: "blank",
         main: "동류집단의 단점",
         sentence: "동류집단에 대한 단점은 실시간으로 기준지표에 대한 정보를 얻을 수 없고 복제 투자가 불가능하다",
-        answer: ["정보를 얻을 수 없고", "복제 투자가 불가능"]
+        answer: ["정보", "복제 투자"]
     }, {
         type: "blank",
         main: "알파척도",
@@ -4152,7 +4152,7 @@ export const que = [
         type: "blank",
         main: "산업 파급효과 분석",
         sentence: "전방, 후방 산업의 공급 및 가격변화가 개별산업에 영향을 주는 파급효과등을 분석할 수 있다.",
-        answer: ["전방", "후방"]
+        answer: ["전방", "후방","파급효과"]
     }, {
         type: "ox",
         main: "행정지도 공개 원칙",

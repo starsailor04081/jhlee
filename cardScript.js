@@ -31,7 +31,6 @@ function loadProgress() {
     const savedStack = data.quizStack;
     const sIdx = data.currentIdx;
     const remaining = savedStack.slice(sIdx);
-    
     if (remaining.length > 0) {
         const nowCard = remaining[0]; 
         const others = remaining.slice(1); 
@@ -227,7 +226,6 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
     const card = stage.querySelector('.card');
     const badge = card.querySelector('.result-badge');
     const allBtns = card.querySelectorAll('.choice-btn, .multi-btn');
-
     allBtns.forEach(btn => {
         btn.style.pointerEvents = 'none';
         if (correctToHighlight.includes(btn.textContent)) btn.classList.add('correct');
@@ -328,7 +326,4 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-window.restart = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
-};
+window.restart = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };

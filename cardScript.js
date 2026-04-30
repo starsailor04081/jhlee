@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v27_append_logic';
+const STORAGE_KEY = 'quiz_system_v28_smart_reload';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -37,21 +37,49 @@ function loadProgress() {
     if (!saved) return;
     try {
         const data = JSON.parse(saved);
-        quizStack = data.quizStack || [...que];
-        currentIdx = data.currentIdx || 0;
+        wrongCounts = data.wrongCounts || {};
         correctCount = data.correctCount || 0;
         totalAttempts = data.totalAttempts || 0;
-        wrongCounts = data.wrongCounts || {};
+
+        // 이슈 복구
         if (data.issueMains) {
             const savedMains = new Set(data.issueMains);
-            que.forEach(q => {
-                if (savedMains.has(q.main)) issueSet.add(q);
-            });
+            que.forEach(q => { if (savedMains.has(q.main)) issueSet.add(q); });
         }
-    } catch (e) { console.error(e); }
+
+        // [핵심 로직] 새로고침 시 위치 재탐색
+        // 1. 이미 맞힌 문제들의 main 값을 Set으로 만듭니다. (진행 완료된 문제 제외용)
+        const completedMains = new Set(data.quizStack.slice(0, data.currentIdx).filter(q => {
+            // 방금 푼 세션에서 맞힌 애들은 wrongCounts가 추가되지 않았거나 그대로일 것임
+            // 여기서는 단순 인덱스 기반이 아니라 '아직 정복 못한 첫 번째'를 찾습니다.
+            return true; 
+        }).map(q => q.main));
+
+        // 2. 전체 que를 돌면서, wrongCounts가 있거나 아직 도달하지 못한 가장 첫 번째 문제를 찾습니다.
+        let restartIdx = -1;
+        for (let i = 0; i < que.length; i++) {
+            const q = que[i];
+            // 이 문제가 틀린 기록(♣)이 있다면? 바로 이 녀석부터 다시 시작!
+            if (wrongCounts[q.main] > 0) {
+                restartIdx = i;
+                break;
+            }
+        }
+
+        // 3. 만약 틀린 문제가 하나도 없다면 기존 저장된 인덱스를 따릅니다.
+        if (restartIdx !== -1) {
+            currentIdx = restartIdx;
+            // 스택도 원래 순서대로 재정렬하여 복습 환경 조성
+            quizStack = [...que]; 
+        } else {
+            currentIdx = data.currentIdx || 0;
+            quizStack = data.quizStack || [...que];
+        }
+
+    } catch (e) { console.error("Load Error:", e); }
 }
 
-// --- 2. 보기 생성 ---
+// --- 2. 렌더링 및 인터랙션 ---
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 function getRandomDistractors(excludeArray, count) {
     const allAnswers = que.flatMap(item => (Array.isArray(item.answer) ? item.answer : [item.answer]));
@@ -74,7 +102,6 @@ function prepareChoices(q) {
     }
 }
 
-// --- 3. 렌더링 ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
@@ -145,7 +172,7 @@ function renderNextCard() {
     stage.appendChild(card);
 }
 
-// --- 4. 스와이프 및 결과 ---
+// --- 3. 오답 및 스와이프 로직 ---
 function handleSwipe(card) {
     if (!card.classList.contains('is-wrong-state') || animating) return;
     const swipeDistance = touchEndX - touchStartX;
@@ -153,7 +180,7 @@ function handleSwipe(card) {
         animating = true;
         card.classList.add('drop-away');
         setTimeout(() => {
-            currentIdx++; // 오답인 경우에도 스와이프 시 인덱스 증가 (다음 문제로)
+            currentIdx++; 
             saveProgress();
             renderNextCard();
         }, 800);
@@ -184,6 +211,7 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
             renderNextCard();
         }, 1100);
     } else {
+        // [세션 중] 틀리면 클로버 추가하고 맨 뒤로 보내기
         wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
         badge.textContent = '❌';
         badge.style.opacity = '1';
@@ -197,9 +225,7 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
             });
         }
 
-        // [핵심] 틀린 문제의 복사본을 맨 뒤로 추가 (Append)
         quizStack.push({...questionData}); 
-        
         card.insertAdjacentHTML('beforeend', `<div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px;">← 스와이프하여 다음 문제로 →</div>`);
         card.classList.add('is-wrong-state');
         animating = false; 
@@ -207,7 +233,7 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
     }
 }
 
-// --- 5. 로직 설정 ---
+// --- 4. 기타 로직 (기존과 동일) ---
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -258,7 +284,6 @@ function setupMultiSelectLogic(card, correctList, questionData) {
     };
 }
 
-// --- 6. UI 및 종료 ---
 function updateUI() {
     if (!progressBar || !counter) return;
     const total = que.length;
@@ -299,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProgress();
     renderNextCard();
     document.getElementById('resetBtn').onclick = () => {
-        if (confirm("모든 데이터를 삭제하고 처음부터 시작하시겠습니까?")) {
+        if (confirm("모든 데이터를 초기화하시겠습니까?")) {
             localStorage.removeItem(STORAGE_KEY);
             location.reload();
         }

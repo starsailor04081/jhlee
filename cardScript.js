@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v23_swipe_on_wrong';
+const STORAGE_KEY = 'quiz_system_v24_re-stack_fixed';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -10,7 +10,6 @@ let animating = false;
 let wrongCounts = {}; 
 let issueSet = new Set(); 
 
-// 스와이프 감지용 변수
 let touchStartX = 0;
 let touchEndX = 0;
 
@@ -47,24 +46,8 @@ function loadProgress() {
             if (savedMains.has(q.main)) issueSet.add(q);
         });
     }
-
-    const savedStack = data.quizStack;
-    const sIdx = data.currentIdx;
-    const remaining = savedStack.slice(sIdx);
-    
-    if (remaining.length > 0) {
-        const nowCard = remaining[0]; 
-        const others = remaining.slice(1); 
-        const wrongItems = [];
-        const normalItems = [];
-        const passedMains = new Set(savedStack.slice(0, sIdx).map(m => m.main));
-        others.forEach(item => {
-            if (passedMains.has(item.main)) wrongItems.push(item);
-            else normalItems.push(item);
-        });
-        quizStack = [...wrongItems, nowCard, ...normalItems];
-    }
-    currentIdx = 0;
+    quizStack = data.quizStack || [...que];
+    currentIdx = data.currentIdx || 0;
 }
 
 // --- 2. 유틸리티 로직 ---
@@ -92,12 +75,14 @@ function prepareChoices(q) {
     }
 }
 
-// --- 3. 렌더링 엔진 & 스와이프 이벤트 등록 ---
+// --- 3. 렌더링 엔진 ---
 function renderNextCard() {
     updateUI();
     if (!stage) return;
     stage.innerHTML = '';
     animating = false;
+
+    // 인덱스가 스택 범위를 넘어가면 종료
     if (currentIdx >= quizStack.length) { showDone(); return; }
 
     const q = quizStack[currentIdx];
@@ -106,14 +91,14 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // 터치 이벤트 리스너 추가 (스와이프 감지용)
+    // 스와이프 이벤트
     card.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
     card.addEventListener('touchend', e => { 
         touchEndX = e.changedTouches[0].screenX; 
-        handleSwipe(card, q);
+        handleSwipe(card);
     }, {passive: true});
 
-    // 상단 바 (클로버 + 이슈체크)
+    // 상단 바
     const topBar = document.createElement('div');
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
@@ -148,7 +133,6 @@ function renderNextCard() {
     topBar.appendChild(issueLabel);
     card.prepend(topBar);
 
-    // 퀴즈 타입별 내부 렌더링 (OX, Blank, Multi)
     if (q.type === 'ox') {
         card.insertAdjacentHTML('beforeend', `
             <div class="card-label">OX QUIZ</div>
@@ -192,24 +176,23 @@ function renderNextCard() {
     stage.appendChild(card);
 }
 
-// --- 4. 스와이프 제어 로직 ---
-function handleSwipe(card, q) {
-    // 오답 상태이고 결과 애니메이션 중이 아닐 때만 스와이프 작동
+// --- 4. 스와이프 및 결과 로직 ---
+function handleSwipe(card) {
     if (!card.classList.contains('is-wrong-state') || animating) return;
 
     const swipeDistance = touchEndX - touchStartX;
-    if (Math.abs(swipeDistance) > 50) { // 50px 이상 밀었을 때
+    if (Math.abs(swipeDistance) > 50) {
         animating = true;
         card.classList.add('drop-away');
         setTimeout(() => {
-            currentIdx++;
+            // [중요] 오답을 뒤로 보냈으므로 현재 인덱스를 유지하거나 조정할 필요가 있음
+            // 이 버전에서는 handleResult에서 이미 Stack을 조작하므로 render만 호출
             saveProgress();
             renderNextCard();
         }, 800);
     }
 }
 
-// --- 5. 결과 처리 ---
 function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
     animating = true;
     totalAttempts++;
@@ -224,23 +207,21 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
     });
 
     if (isSuccess) {
-        // [정답] 기존 로직 유지 (자동 전환)
         correctCount++;
         badge.textContent = '⭕';
         badge.style.opacity = '1';
         setTimeout(() => card.classList.add('fly-away'), 300);
         setTimeout(() => {
-            currentIdx++;
+            currentIdx++; // 맞히면 다음 인덱스로
             saveProgress();
             renderNextCard();
         }, 1100);
     } else {
-        // [오답] 스와이프 대기 모드 진입
+        // [오답 로직 수정]
         wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
         badge.textContent = '❌';
         badge.style.opacity = '1';
 
-        // 빈칸 채워주기
         if (questionData.type === 'blank') {
             const holes = card.querySelectorAll('.hole');
             holes.forEach((hole, idx) => {
@@ -250,20 +231,22 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
             });
         }
 
-        // 스와이프 안내 문구 추가
+        // 현재 틀린 문제를 스택 맨 뒤로 복사본을 넣음
+        quizStack.push({...questionData}); 
+        
         card.insertAdjacentHTML('beforeend', `
-            <div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px; animation: blink 1.5s infinite;">
+            <div id="swipeGuide" style="position:absolute; bottom:20px; left:0; width:100%; text-align:center; color:#ff4b2b; font-size:14px;">
                 ← 스와이프하여 다음 문제로 →
             </div>
         `);
         
-        // 중요: animating을 false로 풀어줘야 사용자가 스와이프할 수 있음
         card.classList.add('is-wrong-state');
-        animating = false; 
+        animating = false; // 사용자가 스와이프할 수 있게 함
+        // 인덱스를 여기서 올리지 않음. 스와이프 시 currentIdx++ 수행
     }
 }
 
-// (나머지 UI 및 종료 로직 동일)
+// --- 5. 버튼 로직 ---
 function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const multiBtns = card.querySelectorAll('.multi-btn');
     const holes = card.querySelectorAll('.hole');
@@ -315,6 +298,7 @@ function setupMultiSelectLogic(card, correctList, questionData) {
     };
 }
 
+// --- 6. UI 및 종료 ---
 function updateUI() {
     if (!progressBar || !counter) return;
     const total = que.length;
@@ -339,7 +323,7 @@ function showDone() {
             reporterArea.style.marginTop = '20px';
             reporterArea.innerHTML = `
                 <p style="font-size:14px; color:#ff4b2b; font-weight:bold;">⚠️ 이슈 문제 데이터 (${issueSet.size}건)</p>
-                <textarea readonly style="width:100%; height:120px; padding:10px; font-size:12px; background:#f9f9f9; border:1px solid #ddd;">${JSON.stringify(issueData, null, 2)}</textarea>
+                <textarea readonly style="width:100%; height:120px; padding:10px; font-size:12px;">${JSON.stringify(issueData, null, 2)}</textarea>
                 <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:10px; background:#444; color:#fff;">복사하기</button>
             `;
             doneTitle.after(reporterArea);

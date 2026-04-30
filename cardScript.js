@@ -1,6 +1,6 @@
 import { que } from './card_data.js';
 
-const STORAGE_KEY = 'quiz_system_v21_issue_reporter';
+const STORAGE_KEY = 'quiz_system_v22_final_full';
 
 let quizStack = [...que];
 let currentIdx = 0;
@@ -8,16 +8,24 @@ let correctCount = 0;
 let totalAttempts = 0;
 let animating = false;
 let wrongCounts = {}; 
-let issueSet = new Set(); // 이슈로 체크된 문제들을 담을 집합
+let issueSet = new Set(); 
 
 const stage = document.getElementById('stage');
 const progressBar = document.getElementById('progressBar');
 const counter = document.getElementById('counter');
 const correctDisplay = document.getElementById('correctCount');
 
-// --- 1. 데이터 저장 및 로드 ---
+// --- 1. 데이터 저장 및 로드 (이슈 데이터 포함) ---
 function saveProgress() {
-    const data = { quizStack, currentIdx, correctCount, totalAttempts, wrongCounts };
+    const issueMains = Array.from(issueSet).map(q => q.main);
+    const data = { 
+        quizStack, 
+        currentIdx, 
+        correctCount, 
+        totalAttempts, 
+        wrongCounts,
+        issueMains 
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -28,9 +36,18 @@ function loadProgress() {
     correctCount = data.correctCount;
     totalAttempts = data.totalAttempts;
     wrongCounts = data.wrongCounts || {};
+    
+    if (data.issueMains) {
+        const savedMains = new Set(data.issueMains);
+        que.forEach(q => {
+            if (savedMains.has(q.main)) issueSet.add(q);
+        });
+    }
+
     const savedStack = data.quizStack;
     const sIdx = data.currentIdx;
     const remaining = savedStack.slice(sIdx);
+    
     if (remaining.length > 0) {
         const nowCard = remaining[0]; 
         const others = remaining.slice(1); 
@@ -85,14 +102,13 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // [상단 레이아웃] 클로버와 이슈 체크박스 배치
+    // 상단 레이아웃 (클로버 + 이슈 체크박스)
     const topBar = document.createElement('div');
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
     topBar.style.alignItems = 'center';
     topBar.style.marginBottom = '10px';
 
-    // 클로버 영역
     const cloverContainer = document.createElement('div');
     const wCount = wrongCounts[q.main] || 0;
     for (let i = 0; i < wCount; i++) {
@@ -104,7 +120,6 @@ function renderNextCard() {
         cloverContainer.appendChild(clover);
     }
 
-    // 이슈 체크박스 영역
     const issueLabel = document.createElement('label');
     issueLabel.style.fontSize = '12px';
     issueLabel.style.color = '#888';
@@ -112,12 +127,12 @@ function renderNextCard() {
     issueLabel.innerHTML = `<input type="checkbox" id="issueChk"> 이슈문제`;
     const chk = issueLabel.querySelector('input');
     
-    // 체크박스 상태 유지 (이미 체크된 문제라면)
     if (issueSet.has(q)) chk.checked = true;
     
     chk.onchange = () => {
         if (chk.checked) issueSet.add(q);
         else issueSet.delete(q);
+        saveProgress(); 
     };
 
     topBar.appendChild(cloverContainer);
@@ -226,6 +241,7 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
     const card = stage.querySelector('.card');
     const badge = card.querySelector('.result-badge');
     const allBtns = card.querySelectorAll('.choice-btn, .multi-btn');
+
     allBtns.forEach(btn => {
         btn.style.pointerEvents = 'none';
         if (correctToHighlight.includes(btn.textContent)) btn.classList.add('correct');
@@ -286,10 +302,8 @@ function showDone() {
     if (doneScreen && doneTitle) {
         doneScreen.classList.add('visible');
         
-        // 이슈 데이터 출력 영역 추가
         if (issueSet.size > 0) {
             const issueData = Array.from(issueSet).map(item => {
-                // fixedChoices 등 임시 필드 제거하고 원본 형태 유지
                 const { fixedChoices, fixedAnswers, ...cleanItem } = item;
                 return cleanItem;
             });
@@ -297,22 +311,25 @@ function showDone() {
             const reporterArea = document.createElement('div');
             reporterArea.style.marginTop = '20px';
             reporterArea.innerHTML = `
-                <p style="font-size:14px; color:#ff4b2b;">⚠️ 체크된 이슈 문제 데이터 (${issueSet.size}건)</p>
-                <textarea readonly style="width:100%; height:150px; padding:10px; font-family:monospace; font-size:12px; border:1px solid #ddd; border-radius:5px; background:#f9f9f9;">${JSON.stringify(issueData, null, 2)}</textarea>
-                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:10px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer;">데이터 복사하기</button>
+                <p style="font-size:14px; color:#ff4b2b; font-weight:bold;">⚠️ 체크된 이슈 문제 데이터 (${issueSet.size}건)</p>
+                <textarea readonly style="width:100%; height:150px; padding:10px; font-family:monospace; font-size:12px; border:1px solid #ddd; border-radius:5px; background:#f9f9f9; color:#333; margin-top:5px;">${JSON.stringify(issueData, null, 2)}</textarea>
+                <button onclick="copyIssueData(this)" style="margin-top:10px; width:100%; padding:12px; background:#444; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">이슈 데이터 복사하기</button>
             `;
             doneTitle.after(reporterArea);
         }
     }
 }
 
-// 복사 함수 (window 전역 등록)
 window.copyIssueData = (btn) => {
     const txt = btn.previousElementSibling;
     txt.select();
     document.execCommand('copy');
     btn.textContent = "복사 완료!";
-    setTimeout(() => btn.textContent = "데이터 복사하기", 2000);
+    btn.style.background = "#4CAF50";
+    setTimeout(() => {
+        btn.textContent = "이슈 데이터 복사하기";
+        btn.style.background = "#444";
+    }, 2000);
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -326,4 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-window.restart = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };
+window.restart = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+};

@@ -8,7 +8,7 @@ let correctCount = 0;
 let totalAttempts = 0;
 let animating = false;
 let wrongCounts = {}; 
-let issueSet = new Set(); // 이슈로 체크된 문제들을 담을 집합
+let issueSet = new Set(); 
 
 const stage = document.getElementById('stage');
 const progressBar = document.getElementById('progressBar');
@@ -85,14 +85,13 @@ function renderNextCard() {
     const card = document.createElement('div');
     card.className = 'card active';
 
-    // [상단 레이아웃] 클로버와 이슈 체크박스 배치
+    // [상단 레이아웃] 클로버와 이슈 체크박스
     const topBar = document.createElement('div');
     topBar.style.display = 'flex';
     topBar.style.justifyContent = 'space-between';
     topBar.style.alignItems = 'center';
     topBar.style.marginBottom = '10px';
 
-    // 클로버 영역
     const cloverContainer = document.createElement('div');
     const wCount = wrongCounts[q.main] || 0;
     for (let i = 0; i < wCount; i++) {
@@ -104,25 +103,22 @@ function renderNextCard() {
         cloverContainer.appendChild(clover);
     }
 
-    // 이슈 체크박스 영역
     const issueLabel = document.createElement('label');
     issueLabel.style.fontSize = '12px';
     issueLabel.style.color = '#888';
     issueLabel.style.cursor = 'pointer';
     issueLabel.innerHTML = `<input type="checkbox" id="issueChk"> 이슈문제`;
     const chk = issueLabel.querySelector('input');
-    
-    // 체크박스 상태 유지 (이미 체크된 문제라면)
     if (issueSet.has(q)) chk.checked = true;
-    
-    chk.onchange = () => {
+    chk.onchange = (e) => {
+        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
         if (chk.checked) issueSet.add(q);
         else issueSet.delete(q);
     };
 
     topBar.appendChild(cloverContainer);
     topBar.appendChild(issueLabel);
-    card.prepend(topBar);
+    card.appendChild(topBar);
 
     if (q.type === 'ox') {
         card.insertAdjacentHTML('beforeend', `
@@ -135,7 +131,10 @@ function renderNextCard() {
             </div>
             <div class="result-badge"></div>`);
         card.querySelectorAll('.ox-btn').forEach(btn => {
-            btn.onclick = () => { if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); };
+            btn.onclick = (e) => { 
+                e.stopPropagation();
+                if (!animating) handleResult(btn.textContent === q.answer, q, [q.answer], [btn.textContent]); 
+            };
         });
     } else {
         const choicesHtml = q.fixedChoices.map(c => `<button class="choice-btn multi-btn">${c}</button>`).join('');
@@ -174,7 +173,8 @@ function setupBlankLogic(card, realAnswersInOrder, questionData) {
     const submitBtn = card.querySelector('#submitBtn');
     let selectedTexts = new Array(holes.length).fill(null);
     multiBtns.forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
             if (animating) return;
             const emptyIdx = selectedTexts.indexOf(null);
             if (emptyIdx !== -1) {
@@ -185,14 +185,16 @@ function setupBlankLogic(card, realAnswersInOrder, questionData) {
         };
     });
     holes.forEach((hole, idx) => {
-        hole.onclick = () => {
+        hole.onclick = (e) => {
+            e.stopPropagation();
             if (animating) return;
             selectedTexts[idx] = null;
             hole.textContent = "____";
             hole.style.color = "#ccc";
         };
     });
-    submitBtn.onclick = () => {
+    submitBtn.onclick = (e) => {
+        e.stopPropagation();
         if (animating || selectedTexts.includes(null)) return;
         const isCorrect = selectedTexts.every((val, idx) => val === realAnswersInOrder[idx]);
         handleResult(isCorrect, questionData, realAnswersInOrder, selectedTexts);
@@ -204,7 +206,8 @@ function setupMultiSelectLogic(card, correctList, questionData) {
     const submitBtn = card.querySelector('#submitBtn');
     let selectedTexts = [];
     multiBtns.forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
             if (animating) return;
             btn.classList.toggle('selected');
             const txt = btn.textContent;
@@ -212,20 +215,23 @@ function setupMultiSelectLogic(card, correctList, questionData) {
             else selectedTexts = selectedTexts.filter(t => t !== txt);
         };
     });
-    submitBtn.onclick = () => {
+    submitBtn.onclick = (e) => {
+        e.stopPropagation();
         if (animating || selectedTexts.length === 0) return;
         const isCorrect = JSON.stringify([...selectedTexts].sort()) === JSON.stringify([...correctList].sort());
         handleResult(isCorrect, questionData, correctList, selectedTexts);
     };
 }
 
-// --- 5. 결과 처리 ---
+// --- 5. 결과 처리 (핵심 수정 부분) ---
 function handleResult(isSuccess, questionData, correctToHighlight, userSelections = []) {
     animating = true;
     totalAttempts++;
     const card = stage.querySelector('.card');
     const badge = card.querySelector('.result-badge');
-    const allBtns = card.querySelectorAll('.choice-btn, .multi-btn');
+    const allBtns = card.querySelectorAll('.choice-btn, .multi-btn, #submitBtn');
+    
+    // UI 업데이트 (버튼 비활성화 및 정답 표시)
     allBtns.forEach(btn => {
         btn.style.pointerEvents = 'none';
         if (correctToHighlight.includes(btn.textContent)) btn.classList.add('correct');
@@ -241,31 +247,42 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
         });
     }
 
-    let animationTriggerDelay; 
-    let nextRenderDelay;      
-
-    if (isSuccess) {
-        animationTriggerDelay = 300; 
-        nextRenderDelay = 800; 
-        correctCount++;
-        badge.textContent = '⭕';
-        setTimeout(() => card.classList.add('fly-away'), animationTriggerDelay);
-    } else {
-        wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
-        animationTriggerDelay = 5000; 
-        nextRenderDelay = 5800; 
-        quizStack.push(questionData);
-        badge.textContent = '❌';
-        setTimeout(() => card.classList.add('drop-away'), animationTriggerDelay);
-    }
-    
     badge.style.opacity = '1';
 
-    setTimeout(() => {
+    if (isSuccess) {
+        // 정답 시: 잠시 후 자동으로 다음 카드로 날아감
+        correctCount++;
+        badge.textContent = '⭕';
+        setTimeout(() => {
+            card.classList.add('fly-away');
+            setTimeout(proceedToNext, 600);
+        }, 400);
+    } else {
+        // 오답 시: 사용자가 클릭할 때까지 대기
+        wrongCounts[questionData.main] = (wrongCounts[questionData.main] || 0) + 1;
+        quizStack.push(questionData);
+        badge.textContent = '❌';
+
+        // 안내 문구 추가
+        const guide = document.createElement('div');
+        guide.innerHTML = "화면을 터치하여 계속하기";
+        guide.style.cssText = "font-size:12px; color:#ff4b2b; margin-top:15px; text-align:center; font-weight:bold;";
+        card.appendChild(guide);
+
+        // 카드 클릭 시 다음으로 진행
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+            card.onclick = null; // 중복 클릭 방지
+            card.classList.add('drop-away');
+            setTimeout(proceedToNext, 600);
+        };
+    }
+
+    function proceedToNext() {
         currentIdx++;
         saveProgress();
         renderNextCard();
-    }, nextRenderDelay);
+    }
 }
 
 function updateUI() {
@@ -285,15 +302,11 @@ function showDone() {
     
     if (doneScreen && doneTitle) {
         doneScreen.classList.add('visible');
-        
-        // 이슈 데이터 출력 영역 추가
         if (issueSet.size > 0) {
             const issueData = Array.from(issueSet).map(item => {
-                // fixedChoices 등 임시 필드 제거하고 원본 형태 유지
                 const { fixedChoices, fixedAnswers, ...cleanItem } = item;
                 return cleanItem;
             });
-            
             const reporterArea = document.createElement('div');
             reporterArea.style.marginTop = '20px';
             reporterArea.innerHTML = `
@@ -306,7 +319,6 @@ function showDone() {
     }
 }
 
-// 복사 함수 (window 전역 등록)
 window.copyIssueData = (btn) => {
     const txt = btn.previousElementSibling;
     txt.select();

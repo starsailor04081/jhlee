@@ -55,18 +55,36 @@ function getRandomDistractors(excludeArray, count) {
     return shuffle(uniquePool).slice(0, count);
 }
 
+// 
 function prepareChoices(q) {
     if (q.fixedChoices) return;
+
     if (q.type === 'ox') {
         q.fixedChoices = ['O', 'X'];
         q.fixedAnswers = [q.answer];
     } else {
+        // 1. 원본 정답 배열 준비
         const originalAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
-        const maxTake = Math.min(originalAnswers.length, 4);
-        const takeCount = Math.floor(Math.random() * maxTake) + 1;
-        const selectedAnswers = shuffle([...originalAnswers]).slice(0, takeCount);
-        const distractors = getRandomDistractors(originalAnswers, 5 - selectedAnswers.length);
+        
+        let selectedAnswers;
+        if (originalAnswers.length >= 5) {
+            // 정답이 5개 이상이면 정답 중에서만 5개 무작위 선택
+            selectedAnswers = shuffle([...originalAnswers]).slice(0, 5);
+        } else {
+            // 정답이 5개 미만이면 정답을 모두 포함
+            selectedAnswers = [...originalAnswers];
+        }
+
+        // 2. 모자란 공간(5개 기준)만큼 오답(distractors) 가져오기
+        const neededDistractors = 5 - selectedAnswers.length;
+        const distractors = neededDistractors > 0 
+            ? getRandomDistractors(originalAnswers, neededDistractors) 
+            : [];
+
+        // 3. 정답들과 오답들을 섞어서 최종 보기 생성
         q.fixedChoices = shuffle([...selectedAnswers, ...distractors]);
+        
+        // 4. 이 문제에서 '정답'으로 인정될 목록 업데이트 (선택된 정답들만)
         q.fixedAnswers = selectedAnswers;
     }
 }

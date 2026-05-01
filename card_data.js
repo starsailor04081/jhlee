@@ -4937,10 +4937,10 @@ export const que = [
         answer: ["기명식 어음"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "기명식 어음의 특징",
-        sentence: "기명식 어음은 만기전 중도해지가 가능하다.",
-        answer: "X"
+        sentence: "기명식 어음은 만기전 중도해지가 불가능 하며 타인 양도가 가능하다",
+        answer: ["중도해지","타인 양도"]
     },
     {
         type: "multi",
@@ -5045,10 +5045,10 @@ export const que = [
         answer: ["총 수요"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "IS곡선의 관계",
-        sentence: "IS곡선에서 이자율이 상승하면 국민소득이 증가하는 양의 관계를 가진다.",
-        answer: "X"
+        sentence: "IS곡선에서 이자율이 상승하면 국민소득이 감소하는 음의 관계를 가진다",
+        answer: ["이자율이 상승","음의 관계"]
     },
     {
         type: "blank",

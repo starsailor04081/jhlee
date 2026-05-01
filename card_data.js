@@ -19,10 +19,10 @@ export const que = [
         answer: ["배당급", "지급일"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "이자소득 이중과세 조정",
         sentence: "이자소득은 법인세와 이중과세 조정을 위한 세액공제 제도가 없다.",
-        answer: "O"
+        answer:  ["이중과세 조정", "세액공제 제도"]
     },
 
     /* --- 금융소득 세율 및 기타소득 --- */
@@ -47,16 +47,16 @@ export const que = [
 
     /* --- 소득세 일반 원칙 --- */
     {
-        type: "ox",
-        main: "거주자 판정 기준",
+        type: "multi",
+        main: "소득세법상 거주자와 비거주자를 구분할때 고려안하는것",
         sentence: "소득세법상 거주자와 비거주자를 구분할때 국적고려는 하지않는다.",
-        answer: "O"
+        answer: ["국적"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "소득세 과세기간",
         sentence: "소득세 과세기간: 사업의 개시, 폐업에의해 영향을 받지 않는다.",
-        answer: "O"
+        answer: ["사업의 개시, 폐업"]
     },
     {
         type: "blank",
@@ -81,10 +81,10 @@ export const que = [
 
     /* --- 사업 및 양도소득 --- */
     {
-        type: "ox",
-        main: "사업소득 확정신고",
+        type: "multi",
+        main: "사업소득 확정신고가 필요한경우",
         sentence: "사업소득은 결손발생시 확정신고가 필요하다",
-        answer: "O"
+         answer: ["결손발생"]
     },
     {
         type: "multi",
@@ -93,10 +93,10 @@ export const que = [
         answer: ["영업권", "사업용고정자산"]
     },
     {
-        type: "ox",
-        main: "미등기 양도 예외",
+        type: "blank",
+        main: "양도소득세 계산",
         sentence: "양도소득세 계산은 미등기 양도부동산엔 적용하지 않는다.",
-        answer: "O"
+        answer:  ["미등기 양도부동산"]
     },
     {
         type: "blank",
@@ -123,10 +123,10 @@ export const que = [
         answer: ["10%", "20%", "작은 금액"]
     },
     {
-        type: "ox",
+        type: "multi",
         main: "증권거래세 과세대상",
         sentence: "증권거래세 과세대상에는 코넥스시장 거래 주권이 포함된다.",
-        answer: "O"
+        answer: ["코넥스시장 거래 주권"]
     },
     {
         type: "blank",
@@ -135,10 +135,10 @@ export const que = [
         answer: ["65세", "5000만원"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "소득세 주소지 과세제도",
         sentence: "소득세법은 소득발생지에 불구하고 주소지 과세제도를 체택하고있다.",
-        answer: "O"
+        answer: ["주소지 과세제도"]
     },
     {
         type: "blank",
@@ -153,10 +153,10 @@ export const que = [
         answer: ["더 큰 금액"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "1거주자 단체 과세",
         sentence: "1거주자 단체의 이자소득 혹은 배당소득은 분리과세 대상이다.",
-        answer: "O"
+        answer: ["분리과세 대상"]
     },
     {
         type: "blank",
@@ -165,10 +165,10 @@ export const que = [
         answer: ["한계세율"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "해외주식 양도차익",
         sentence: "해외 상장주식 매매관련 양도차익은 과세된다.",
-        answer: "O"
+        answer: ["매매관련 양도차익"]
     },
     {
         type: "blank",
@@ -201,10 +201,10 @@ export const que = [
         answer: ["반기", "2개월"]
     },
     {
-        type: "ox",
-        main: "납세의무 소멸 사유 여부",
+        type: "multi",
+        main: "납세의무 소멸사유에 해당되지 않는것",
         sentence: "납세의무자 사망은 납세의무 소멸사유에 해당되지 않는다.",
-        answer: "O"
+        answer: ["납세의무자 사망"]
     },
     {
         type: "blank",
@@ -213,10 +213,10 @@ export const que = [
         answer: ["하락", "풋옵션"]
     },
     {
-        type: "ox",
-        main: "주식 운용 전략 분류",
+        type: "multi",
+        main: "주식 적극적 운용방법",
         sentence: "주식운용전략 중 증권시장의 정보선점은 적극적 운용방법이라고 볼 수 있다.",
-        answer: "O"
+        answer:["증권시장의 정보선점"]
     },
     {
         type: "blank",
@@ -243,10 +243,10 @@ export const que = [
         answer: ["이해관계인", "100분의 5"]
     },
     {
-        type: "ox",
-        main: "ELW 핵심설명서 제공 여부",
+        type: "multi",
+        main: "핵심설명서 제공대상",
         sentence: "주식워런트증권(ELW)은 일반 주식과 달리 상품의 위험성으로 인해 핵심 설명서 제공 대상에 포함된다.",
-        answer: "O"
+        answer: ["주식워런트증권(ELW)"]
     },
     {
         type: "blank",
@@ -300,13 +300,13 @@ export const que = [
         type: "blank",
         main: "주관회사 주식 보유 제한",
         sentence: "발행회사 및 발행회사의 이해관계인이 주관회사의 주식등을 100분의 5이상 보유시 주관회사의 업무를 할 수 없다",
-        answer: ["5이상"]
+        answer: ["100분의 5이상"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "ELW 핵심 설명서 제공 여부",
         sentence: "주식워렌트 : 시장에서 매매되는 상품이라도 핵심 설명서 제공 대상에 포함된다",
-        answer: "O"
+        answer: ["핵심 설명서 제공 대상"]
     },
     {
         type: "blank",
@@ -351,10 +351,10 @@ export const que = [
         answer: ["화폐가치하락"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "책임보험의 소속",
-        sentence: "책임보험은 생명보험이 아닌 손해보험 상품에 해당한다.",
-        answer: "O"
+        sentence: "책임보험은 손해보험 상품에 해당한다.",
+        answer: ["손해보험 상품"]
     },
     {
         type: "blank",
@@ -383,7 +383,7 @@ export const que = [
     {
         type: "ox",
         main: "생명보험의 보상 원칙",
-        sentence: "생명보험은 실손보상이 아닌 정액보상이 원칙이다.",
+        sentence: "생명보험은 정액보상이 원칙이다.",
         answer: "O"
     },
     {
@@ -413,7 +413,7 @@ export const que = [
     {
         type: "ox",
         main: "주택저당증권(MBS) 수익률 특성",
-        sentence: "주택저당증권은 구조가 복잡하고 현금흐름이 불확실하여 국채,회사채대비 수익률이 높다.",
+        sentence: "주택저당증권은 구조가 복잡하고 현금흐름이 불확실하여 국채, 회사채대비 수익률이 높다.",
         answer: "O"
     },
     {
@@ -429,10 +429,10 @@ export const que = [
         answer: ["후순위 증권발행", "초과스프레드"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "증권거래세 과세대상",
         sentence: "증권거래세 과세대상 : 주식으로 대물변제",
-        answer: "O"
+        answer: ["증권거래세 과세대상"]
     },
     {
         type: "blank",
@@ -453,10 +453,10 @@ export const que = [
         answer: ["주선업무", "신용평가업자"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "지급보증 전환사채 신고서 제출",
         sentence: "은행이 지급보증한 전환사채의 경우 증권 신고서 제출대상이다.",
-        answer: "O"
+        answer: ["증권 신고서 제출대상"]
     },
     {
         type: "blank",
@@ -507,10 +507,10 @@ export const que = [
         answer: ["10%"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "증권거래세 과세 원칙",
         sentence: "증권거래세: 양도가액을 과세표준으로 하므로 양도차익의 여부와 무관하게 납부한다.",
-        answer: "O"
+        answer: ["양도가액","과세표준"]
     },
     {
         type: "blank",
@@ -520,10 +520,10 @@ export const que = [
     },
 
     {
-        type: "ox",
+        type: "blank",
         main: "저당대출담보부채권의 특징",
         sentence: "저당대출담보부채권은 중장기 고정금리이다.",
-        answer: "O"
+        answer: ["중장기 고정금리"]
     }, {
         type: "blank",
         main: "국내 채권유통시장의 특징",
@@ -535,40 +535,40 @@ export const que = [
         sentence: "이자연계 파생결합채권엔 사채권이있다.",
         answer: ["사채권"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "미국달러표시 채권 발행 형태",
         sentence: "미국달러표시 채권이 미국 이외에 국가에서 발행할 경우 무기명채권으로 발행된다",
-        answer: "O"
+        answer: ["무기명채권"]
     }, {
         type: "blank",
         main: "주택 저당채권의 신용 등급",
         sentence: "주택 저당채권: 화사채에 비해 높은 신용등급의 채권 발행",
         answer: ["화사채"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "RP 매매와 자본손실 위험",
         sentence: "환매 조건부 채권 매매: 채권 매각에 따른 자본손실 위험이 없다.",
-        answer: "O"
+        answer: ["자본손실 위험"]
     }, {
         type: "blank",
         main: "주택 저당채권의 상대적 신용도",
         sentence: "주택 저당채권: 회사채보다 신용등급이 높다.",
         answer: ["회사채"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "수익률 변화에 따른 채권듀레이션",
         sentence: "채권듀레이션: 채권의 수익률이 높을수록 듀레이션이 짧아진다.",
-        answer: "O"
+        answer: ["듀레이션", "짧아진다"]
     }, {
         type: "blank",
         main: "채권볼록성의 영향",
         sentence: "채권블록성: 듀레이션이용시 채권가격 상승폭을 축소시킨다 (과소평가한다)",
         answer: ["과소평가"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "채권과 주식의 발행주체 비교",
         sentence: "채권은 주식보다 발행주체범위가 매우 다양하다",
-        answer: "O"
+        answer: ["발행주체범위가 매우 다양"]
     }, {
         type: "blank",
         main: "수의상환채권의 발행 배경",
@@ -580,10 +580,10 @@ export const que = [
         sentence: "채권발행방식: 간접발행 대부분은 총액인수방식",
         answer: ["총액인수방식"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "수의상환채권의 정의",
         sentence: "수의상환채권: 채권 발행자에게 옵션을 부여하는 채권",
-        answer: "O"
+        answer: ["수의상환채권"]
     }, {
         type: "blank",
         main: "상장채권의 시장 특징",
@@ -596,10 +596,10 @@ export const que = [
         answer: ["수익률 예측", "동종채권 교체"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "유동화전문회사(SPC)의 특징",
         sentence: "유동화전문회사(SPC)는 1회 유동화업무만 처리하며, 유한회사형태로 설립한다.",
-        answer: "O"
+        answer: ["1회 유동화업무", "유한회사형태"]
     }, {
         type: "blank",
         main: "회사내부자의 범위",
@@ -616,10 +616,10 @@ export const que = [
         sentence: "회사윤리 사항은 상호존중이 해당한다.",
         answer: ["상호존중"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "자기자본수익률의 정의",
         sentence: "자기자본수익률은 자기자본투자액에 대한 납세 전 현금흐름의 비율이다",
-        answer: "O"
+        answer: ["납세 전 현금흐름의 비율"]
     }, {
         type: "blank",
         main: "부동산 감정평가방식의 특징",
@@ -631,10 +631,10 @@ export const que = [
         sentence: "자기자본 이익률 = 순이익 / 자기자본 금액",
         answer: ["순이익"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "수익상환 채권의 가치 평가",
         sentence: "수익상환 채권 : 일반채권의 가치에서 콜옵션 가치를 차감하여 나타난다.",
-        answer: "O"
+        answer: ["수익상환 채권"]
     }, {
         type: "blank",
         main: "채권 재투자 위험 요인",
@@ -661,10 +661,10 @@ export const que = [
         sentence: "내부수익률: 서로 상이한 시점에서 발생하는 현금 흐름의 크기와 화폐의 시간적 가치가 고려된 수익률을 말한다. 현금유출액의 현재가치와 현금유입액의 현재가치를 일치시켜주는 할인율이다.",
         answer: "O"
     }, {
-        type: "ox",
+        type: "blank",
         main: "시간가중수익률의 특징",
         sentence: "시간가중수익률은 투자기간중의 자금 유출,입 시점에 대한 영향을 고려한다",
-        answer: "X"
+        answer: ["시간가중수익률"]
     }, {
         type: "blank",
         main: "연수익률 환산의 왜곡",
@@ -1381,10 +1381,10 @@ export const que = [
         sentence: "투자신탁 수익자 총회: 반대의사 통지시 총회 결의일부터 20일 이내 자기소유 수익증권 매수 청구",
         answer: ["매수청구","20일 이내"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "종류형 집합투자기구의 보수 구조",
-        sentence: "종류형 집합투자기구 : 판매보수, 운용보수가 차등화 지급되지 않음",
-        answer: "X"
+        sentence: "종류형 집합투자기구: 판매보수차이로 인해 기준가격이 다르거나 판매 수수료가 다른 여러 종류의 집합투자증권을 발행",
+        answer: ["종류형 집합투자기구"]
     }, {
         type: "blank",
         main: "환매 대금 지급 기한 및 예외",
@@ -1463,10 +1463,10 @@ export const que = [
         answer: ["시너지효과"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "Break-even inflation trade 전략",
-        sentence: "Break-even inflation trade는 향후 경기침체를 예상하여 물가연동 채권을 매수하고 만기국채를 매도하는 전략을 사용한다.",
-        answer: "X"
+        sentence: "Break-even inflation trade는 향후 경기침체를 예상하여 물가연동 채권을 매도하고 만기국채를 매수하는 전략을 사용한다..",
+        answer: ["Break-even inflation trade"," 물가연동 채권", "만기국채"]
     },
     {
         type: "blank",
@@ -1523,10 +1523,10 @@ export const que = [
         answer: ["쿠폰의 수준", "신용손실", "CDO구조", "매니저의 운용성과"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "부도확률 변화와 Equity Tranche",
-        sentence: "Equity Tranche는 부도확률이 높아지면, 가격이 상승하고 스프레드가 하락한다",
-        answer: "X"
+        sentence: "Equity Tranche는 부도확률이 낮아지면, 가격이 상승하고 스프레드가 하락한다",
+        answer: ["Equity Tranche"]
     },
     {
         type: "blank",
@@ -1565,10 +1565,10 @@ export const que = [
         sentence: "CDO 차익거래 : 신용위험 매수를 위해 CDO Equity Tranche 매수, 신용위험 매도를 위해 Single name CDS 매수",
         answer: ["CDO Equity Tranche 매수", "Single name CDS 매수"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "CDO 부도 상관관계와 델타",
-        sentence: "CDO : 포트폴리오가 높은 부도 상관관계를 가질경우 Equity Tranche델타가 커진다.",
-        answer: "X"
+        sentence: "CDO : 포트폴리오가 높은 부도 상관관계를 가질경우 Equity Tranche델타가 작아진다.",
+        answer: ["CDO","Equity Tranche"]
     }, {
         type: "blank",
         main: "CDO Senior Tranche",
@@ -1590,10 +1590,10 @@ export const que = [
         sentence: "롤링헤지는 시장변화에 탄력적 대응이 가능하며 헤지기간 이후 환노출로 인하여 헤지효과가 낮아진다",
         answer: ["환노출"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "내재적헤지와 상관관계",
-        sentence: "내재적헤지는 달러와 높은 음(-)의 상관관계를 가지는 주식에 투자하는 미국투자자는 환손실과 주가에서의 환율요인이 상쇄됨로서 환위험이 낮아지는 경우가 있다.",
-        answer: "X"
+        sentence: "내재적헤지는 달러와 높은 양(+)의 상관관계를 가지는 주식에 투자하는 미국투자자는 환손실과 주가에서의 환율요인이 상쇄됨로서 환위험이 낮아지는 경우가 있다.",
+        answer: ["양(+)의 상관관계","환율요인이 상쇄"]
     }, {
         type: "blank",
         main: "제로 베이시스 헤지",
@@ -1676,10 +1676,10 @@ export const que = [
         sentence: "재무 상태표만 활용하여 산출하는 재무비율은 유동비율(유동자산/유동부채)이 있다.",
         answer: ["유동비율"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "CPPI 전략의 변동성 추정",
-        sentence: "고정비율 포트폴리오 보험전략을 실행하기 위해 주가 변동성 추정이 필수적이다.",
-        answer: "X"
+        sentence: "고정비율 포트폴리오 보험전략을 실행하기 위해 주가 변동성 추정이 불필요하고, 옵션모형 이용 포트폴리오에서 변동성 추정문제점이있다. ",
+        answer: [" 변동성 추정이 불필요" , "변동성 추정문제점"]
     }, {
         type: "blank",
         main: "부채비율과 주주 기대수익률",
@@ -1721,10 +1721,10 @@ export const que = [
         sentence: "변동비율법은 적극적 투자전략으로 주가 상승시 주식편입비율을 낮추고, 주가 하락시 주식편입비율을 높이는 전략이다.",
         answer: ["주식편입비율"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "변동비율법과 주가 추세",
-        sentence: "변동비율법을 이용할경우 주가가 추세선보다 낮으면 주식편입배율이 감소한다.",
-        answer: "X"
+        sentence: "변동비율법을 이용할경우 주가가 추세선보다 낮으면 주식편입배율이 증대된다.",
+        answer: ["변동비율법", "주식편입배율이 증대"]
     }, {
         type: "multi",
         main: "재무상태표 구성 요소",
@@ -2657,10 +2657,10 @@ export const que = [
         sentence: "국세기본법: 납세고지나 교부청구의 경우 국세 징수권 소멸시효가 중단된다.",
         answer: ["소멸시효"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "국세부과 제척기간",
-        sentence: "국세기본법: 국세부과 제척기간은 세목에 상관없이 5년이다",
-        answer: "X"
+        sentence: "국세기본법: 국세부과 제척기간은 세목에 상관없이 15년이다",
+        answer: [15]
     }, {
         type: "blank",
         main: "법인 분할 의제배당",
@@ -2724,12 +2724,6 @@ export const que = [
         main: "자본시장법상 설명의무 대상",
         sentence: "자본시장법상 설명의 의무는 일반투자자에게 적용된다",
         answer: ["일반투자자"]
-    },
-    {
-        type: "ox",
-        main: "설명의무 적용 범위",
-        sentence: "설명의무는 전문투자자에게만 해당된다",
-        answer: "X"
     },
     {
         type: "blank",
@@ -2798,10 +2792,10 @@ export const que = [
         answer: ["연공급", "장기근속"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "퇴직연금 유형별 직접투자",
-        sentence: "확정급여: 직접투자가 금지, 확정기여: 직접투자 가능",
-        answer: "X"
+        sentence: "확정급여: 직접투자가능, 확정기여: 직접투자 금지 ",
+        answer: ["가능","금지"]
     },
     {
         type: "ox",
@@ -2834,16 +2828,10 @@ export const que = [
         answer: ["수익자 전원"]
     },
     {
-        type: "ox",
-        main: "전통적 감정평가법 NPV",
-        sentence: "전통적인 감정평가법에서는 순현재가치(NPV) 0보다 작으면 투자안을 채택한다.",
-        answer: "X"
-    },
-    {
-        type: "ox",
+        type: "blank",
         main: "전통적 감정평가법 NPV",
         sentence: "전통적인 감정평가법에서는 순현재가치(NPV) 0보다 크면 투자안을 채택한다.",
-        answer: "O"
+        answer: ["순현재가치(NPV)"]
     },
     {
         type: "blank",
@@ -2911,10 +2899,10 @@ export const que = [
         answer: ["실현수익률", "목표수익률"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "위험회피 투자자의 효용함수",
-        sentence: "위험회피 투자자의 효용함수는 원점대비하여 볼록하다",
-        answer: "X"
+        sentence: "위험회피 투자자의 효용함수는 원점대비하여 오목하다",
+        answer: ["효용함수","오목하다"]
     },
     {
         type: "blank",
@@ -2941,10 +2929,10 @@ export const que = [
         answer: ["정보처리", "정보통신기술의 발달"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "국제 주식시장 회전률",
-        sentence: "국제 주식시장에서 회전률이 높은 국가는 장기 가치투자를 목적으로 하는 투자자의 비중이 크다.",
-        answer: "X"
+        sentence: "국제 주식시장에서 회전률이 높은 국가는 단기 매매차익을 목적으로 하는 투자자의 비중이 크다.",
+        answer: ["단기 매매차익"]
     },
     {
         type: "ox",
@@ -2971,10 +2959,10 @@ export const que = [
         answer: ["가팔라지는"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "산술평균 투자수익률",
-        sentence: "산술평균 투자수익률: 기간별 투자금액의 크기를 고려하지 않는다",
-        answer: "X"
+        sentence: "산술평균 투자수익률: 기간별 투자금액의 크기를 고려한다 ",
+        answer: ["산술평균 투자수익률"]
     },
     {
         type: "blank",
@@ -3031,10 +3019,10 @@ export const que = [
         answer: ["long fat tail"]
     },
     {
-        type: "ox",
+        type: "blank",
         main: "신용분실분포",
-        sentence: "신용분실분포는 시장 수익률과 비교할때 대칭성이 매우 강하여 정규분포에 가까운 형태를 보인다",
-        answer: "X"
+        sentence: "신용분실분포는 시장 수익률과 비교할때 비대칭성이 매우 강하여 한쪽으로 치우친 두껍고 긴 꼬리(fat tail)을 가진 분포를 보인다",
+        answer: ["비대칭성이 매우 강하여"]
     },
     {
         type: "blank",
@@ -3762,10 +3750,10 @@ export const que = [
         answer: ["교환사채"],
     },
     {
-        type: "ox",
+        type: "blank",
         main: "풋옵션부채권의 가치 변화",
-        sentence: "옵션부사채: 채권 수익률 상승시 풋옵션부채권은 일반채권에비해 풋옵션가치만큼 보다 작게 나타남",
-        answer: "X",
+        sentence: "옵션부사채: 채권 수익률 상승시 풋옵션부채권은 일반채권에비해 풋옵션가치만큼 보다 크게나타남",
+        answer: ["수익률 상승", "풋옵션가치만큼 보다 크게나타남"],
     },
     {
         type: "blank",
@@ -3874,10 +3862,10 @@ export const que = [
         sentence: "액티브운용은 시장의 비효율을 전제로한다.",
         answer: ["비효율"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "액티브 운용과 최적화법",
-        sentence: "액티브 운용은 효율적 가설을 지지하지 않으므로, 최적화법이 적합하다.",
-        answer: "X"
+        sentence: "액티브 운용은 효율적 가설을 지지하지 않으므로, 최적화법이 적합하지 않다.",
+        answer: ["최적화법이 적합하지 않다."]
     }, {
         type: "blank",
         main: "패시브 운용과 최적화법",
@@ -3904,10 +3892,10 @@ export const que = [
         sentence: "생존계정의 오류: 운용사가 현재 운용하고있는 모든 펀드의 수익률을 보여주는 경우에도 해당 운용사의 정확한 성과를 보여주는것이 아니라 과대평가될 가능성이있다",
         answer: ["생존계정의 오류"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "GIPS 수익률 계산",
-        sentence: "GIPS : 유가증권에 투자하지 않은 현금 및 등가매물에서 발생하는 수익은 모든 수익률 계산에서 제외된다",
-        answer: "X"
+        sentence: "GIPS : 유가증권에 투자하지 않은 현금 및 등가매물에서 발생하는 수익은 모든 수익률 계산에 포함된다",
+        answer: ["GIPS"]
     }, {
         type: "blank",
         main: "시간가중 수익률",
@@ -3989,10 +3977,10 @@ export const que = [
         sentence: "protective put전략 : downside risk 일정수준 한정하면서 upside potentioal은 유지하는 전략으로 풋옵션을 매입하는 방법이있다.",
         answer: ["protective put전략"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "민감도 측정치 합산 여부",
-        sentence: "민감도 측정치는 다른 종류의 리스크들과 합산이 가능하다.",
-        answer: "X"
+        sentence: "민감도 측정치는 다른 종류의 리스크들과 합산이 불가하다.",
+        answer: ["다른 종류의 리스크", "합산이 불가"]
     }, {
         type: "blank",
         main: "사후검증의 정의",
@@ -4034,10 +4022,10 @@ export const que = [
         sentence: "2회 이상 교부송달을 하였지만, 납부기간 내 송달이 곤란한경우 공시송달한다.",
         answer: ["공시송달"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "용도지역 및 용도지구 중복",
-        sentence: "용도지구는 중복이 불가하고 용도지역은 중복이 가능하다",
-        answer: "X"
+        sentence: "용도지구는 중복이 가능하고 용도지역은 중복이 불가하다",
+        answer: ["용도지구","용도지역은"]
     }, {
         type: "blank",
         main: "등가교환방식",
@@ -4099,10 +4087,10 @@ export const que = [
         sentence: "지료는 지상권의 성립요소가 아니며, 지상권은 최장기간에 대한 제한이있다.",
         answer: ["성립요소", "최장기간"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "건축 착공량 지표의 용이성",
-        sentence: "건축의 착공량: 경기측정에 적잘한 지표 자료를 구하기 어렵다",
-        answer: "X"
+        sentence: "건축의 착공량: 경기측정에 적잘한 지표 자료를 구하기 용이하다",
+        answer: ["건축의 착공량"]
     }, {
         type: "blank",
         main: "공부상 면적 불일치 기준",
@@ -4170,10 +4158,10 @@ export const que = [
         sentence: "경영개선권고 : 경영실태평가결과 종합등급이 3등급 이상이고, 자본적정성이 4등급 이하",
         answer: ["경영개선권고", "3등급", "4등급"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "일임매매 허용 여부",
-        sentence: "일임매매는 원칙적으로 허용한다",
-        answer: "X"
+        sentence: "일임매매는 원칙적으로 비허용한다",
+        answer: ["일임매매"]
     }, {
         type: "blank",
         main: "내부자 단기 매매차익 반환제도",
@@ -4234,12 +4222,14 @@ export const que = [
         main: "이사회 보고 의무",
         sentence: "금융투자업자는 재산상 이익 제공현황등 매년 이사회에게 보고해야한다.",
         answer: ["이사회"]
-    }, {
+    }, 
+    {
         type: "ox",
         main: "추가 수수료 수취",
         sentence: "계약으로 정한 수수료 외 대가를 추가로 받는것은 상황에 따라 허용되는 사항이다.",
         answer: "X"
-    }, {
+    },
+    {
         type: "blank",
         main: "성과보장 등 표현 금지",
         sentence: "투자성 성과보장 등 표현 금지 : 절대 원금손실 없다 등 성과보장",
@@ -4270,10 +4260,10 @@ export const que = [
         sentence: "투자 매매업 , 중개업은 투자 예탁금을 고유자산과 구분하여 증권회사에 예치 또는 신탁업자에게 신탁",
         answer: ["증권회사", "신탁업자"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "투자자 예탁금 관리 및 회사채 투자",
-        sentence: "예치 기관은 예치 또는 신탁받은 투자자 예탁금을 자기 재산과 구분하여 관리하여야 하며 회사채투자는 가능하다.",
-        answer: "X"
+        sentence: "예치 기관은 예치 또는 신탁받은 투자자 예탁금을 자기 재산과 구분하여 정해진 방법으로 관리, 운용하여야하며 회사채투자는 불가능하다",
+        answer: ["자기 재산과 구분", "회사채투자는 불가능"]
     }, {
         type: "blank",
         main: "투자자예탁금 양도 금지",
@@ -4290,10 +4280,10 @@ export const que = [
         sentence: "이해관계인 되기 6개월 이전 체결한 계약거래는 이해관계인과 거래할 수 있다.",
         answer: ["6개월 이전"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "상관계수 0과 분산투자효과",
-        sentence: "상관계수가 없을경우(0)에는 분산투자효과(위험감소효과)가 발생하지 않는다.",
-        answer: "X"
+        sentence: "상관계수가 완전 정의 관계에 있을때 분산투자 효과는 거의 없다.",
+        answer: ["완전 정의 관계"]
     }, {
         type: "blank",
         main: "국제투자 분산효과",
@@ -4380,10 +4370,10 @@ export const que = [
         sentence: "저항선: 추가상승이 실패하고 하락하는선",
         answer: ["저항선"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "저항선 상향 돌파 시 거래량",
-        sentence: "추세가 저항성 상향 돌파시 거래량이 증가한다.",
-        answer: "X"
+        sentence: "추세가 저항성 상향 돌파시 거래량이 감소한다.",
+        answer: ["상향 돌파","거래량이 감소"]
     }, {
         type: "blank",
         main: "지지선의 정의",
@@ -4405,10 +4395,10 @@ export const que = [
         sentence: "관통형: 상승추세신호",
         answer: ["상승추세신호"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "삼산과 삼중천장형",
-        sentence: "삼산: 미국식 분석의 삼중천장형과 다른 형태이다",
-        answer: "X"
+        sentence: "삼산: 미국식 분석의 삼중천장형과 같은 형태",
+        answer: ["삼산"]
     }, {
         type: "blank",
         main: "VR의 정의",
@@ -4500,10 +4490,10 @@ export const que = [
         sentence: "라이프사이클 분석: 투자유망산업을 고르기엔 괜찮지만, 적정주가 평가에는 일정한 한계를 가짐",
         answer: ["적정주가 평가"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "집중도 지수 CRk",
-        sentence: "CRk의 값이 크게 설정될수록 시장의 집중정도의 명확성이 높아진다.",
-        answer: "X"
+        sentence: "CRk의 값이 크게 설정될수록 시장의 집중정도의 명확성이 떨어진다.",
+        answer: ["CRk"]
     }, {
         type: "blank",
         main: "집중률의 단점",
@@ -4555,10 +4545,10 @@ export const que = [
         sentence: "소멸시효는 5년이지만 5억이상의 국세채권은 10년이다.",
         answer: ["5년", "5억", "10년"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "비거주자 종합과세 요건",
-        sentence: "비 거주자가 국내 사업장 또는 부동산이있다면 분리과세한다",
-        answer: "X"
+        sentence: "비 거주자가 국내 사업장 또는 부동산이있다면 종합과세한다",
+        answer: ["종합과세"]
     }, {
         type: "blank",
         main: "비거주자 분리과세 조건",
@@ -4681,10 +4671,10 @@ export const que = [
         sentence: "유사해외 통화선물의 거래대상은 원화를 제외한 이종통화이다",
         answer: ["원화", "이종통화"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "환 위험 감소 조건",
-        sentence: "미국달러를 기준통화로 하는 투자자에게 달러화를 연동한 환율제도를 가진 국가에 투자시 환 위험이 증가한다",
-        answer: "X"
+        sentence: "미국달러를 기준통화로 하는 투자자에게 달러화를 연동한 환율제도를 가진 국가에 투자시 환 위험이 감소한다",
+        answer: ["환 위험이 감소"]
     }, {
         type: "blank",
         main: "통화주의자 이론",
@@ -4731,10 +4721,10 @@ export const que = [
         sentence: "이해상충 발생위험 예상시 매매혹은 거래전에 해당 투자자에게 알려야한다.",
         answer: ["매매혹은 거래전"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "이해상충 통보 의무",
-        sentence: "이해상충 발생 가능성이 있는경우 투자자에게 사후 통보를 해야한다.",
-        answer: "X"
+        sentence: "이해상충 발생 가능성이 있는경우 투자자에게 사전 통보를 해야한다.",
+        answer: ["사전 통보"]
     }, {
         type: "blank",
         main: "주의임무의 성격",
@@ -4796,10 +4786,10 @@ export const que = [
         sentence: "외국기업 (비거주자)이 한국에서 달러표시로 발행하는 채권을 김치본드라고 한다.",
         answer: ["김치본드"]
     }, {
-        type: "ox",
+        type: "blank",
         main: "양키본드 공시의무",
-        sentence: "양키본드는 공시의무가 면제된다",
-        answer: "X"
+        sentence: "양키본드는 공시의무가 부가된다",
+        answer: ["공시의무"]
     }, {
         type: "blank",
         main: "공격적 전략의 특징",

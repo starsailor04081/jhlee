@@ -59,6 +59,10 @@ function getRandomDistractors(excludeArray, count) {
 function prepareChoices(q) {
     if (q.fixedChoices) return;
 
+    if (Array.isArray(q.answer)) {
+        q.answer = q.answer.map(a => String(a));
+    }
+
     if (q.type === 'ox') {
         q.fixedChoices = ['O', 'X'];
         q.fixedAnswers = [q.answer];
@@ -263,7 +267,12 @@ function handleResult(isSuccess, questionData, correctToHighlight, userSelection
         });
     }
 
-    badge.style.opacity = '1';
+    badge.className += ' show'
+    setTimeout(() => {
+        badge.classList.remove('show');
+    }, 500);
+
+
 
     if (isSuccess) {
         // 정답 시: 잠시 후 자동으로 다음 카드로 날아감

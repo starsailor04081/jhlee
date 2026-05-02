@@ -201,13 +201,24 @@ header h1 {
 /* 결과 오버레이 */
 .result-badge {
   position: absolute;
-  top: 24px;
-  right: 24px;
-  font-size: 28px;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: -5;
+  height: 100px;
+  bottom: 0;
+  margin: auto;
+  font-size: 100px;
   opacity: 0;
   transition: opacity 0.2s;
+  text-align: center;
 }
 
+
+.result-badge.show{
+  opacity: 1;
+  z-index: 2;
+}
 /* 날라가는 애니메이션 - 맞춤 */
 @keyframes fly-right {
   0% {
@@ -361,4 +372,29 @@ header h1 {
 .score-pill.x {
   border-color: var(--wrong);
   color: var(--wrong);
+}
+/* 모든 요소의 스크롤바를 숨기는 범용 스타일 */
+* {
+  /* IE and Edge */
+  -ms-overflow-style: none;
+  /* Firefox */
+  scrollbar-width: none;
+}
+
+/* Chrome, Safari, Opera에서 스크롤바 숨기기 */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 특정 컴포넌트(.stage)에 대해 한 번 더 확실히 적용 */
+.stage {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.stage::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
 }

@@ -503,4 +503,40 @@ export const que = [
         sentence: "",
         answer: ["군집의 크기와 밀도가 일정하지 않아도 정확하게 군집을 형성할 수 있다."]
     },
+    {
+        type: "multi",
+        main: "다음 중 기업 내 분산된 데이터를 통합하고 관리하는 데 사용하는 것으로 가장 적합한 것은?",
+        sentence: "",
+        answer: ["DW"]
+    },
+    {
+        type: "multi",
+        main: "다음 중 빅데이터의 3V에 해당하지 않은 것은",
+        sentence: "크기(Volume), 속도(Velocity), 다양성(Variety)",
+        answer: ["진실성(Veracity)"]
+    },
+    {
+        type: "multi",
+        main: "데이터 사이언스에 대한 설명으로 옳지 않은 것은?",
+        sentence: "",
+        answer: ["분석 결과의 정확도가 가장 우선시 된다."]
+    },
+    {
+        type: "multi",
+        main: "정보 관리 측명에서 빅데이터 활용에 대한 설명으로 올바른 것은?",
+        sentence: "",
+        answer: ["정보를 체계적으로 축적하고 새로운 내용을 추가하거나 생신할 수 있어야 한다."]
+    },
+    {
+        type: "multi",
+        main: "다음 중 비정형 데이터가 아닌 것은?",
+        sentence: "온도는 딱 정해는 숫자",
+        answer: ["실내 온도"]
+    },
+    {
+        type: "multi",
+        main: "",
+        sentence: "",
+        answer: [""]
+    },
 ]

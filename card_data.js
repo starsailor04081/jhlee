@@ -653,4 +653,22 @@ export const que = [
         sentence: "",
         answer: ["거래 횟수가 적은 품목에 대해 규칙을 쉽게 발견할 수 있다."]
     },
+    {
+        type: "multi",
+        main: "다음 중 분석 종류와 분석 기법 예시의 연결이 옳은 것은?",
+        sentence: "",
+        answer: ["연관분석 - 장바구니 분석"]
+    },
+    {
+        type: "multi",
+        main: "K-평균 군집화에 대한 설명으로 가장 적절하지 않은 것은?",
+        sentence: "",
+        answer: ["한 관측치가 복수 군집에 중복해서 할당될 수 있다."]
+    },
+    {
+        type: "multi",
+        main: "다음 중 제1종 오류에 대한 설명으로 옳은 것은?",
+        sentence: "",
+        answer: ["귀무가설이 참일 때, 귀무가설이 참이 아니라고 판정"]
+    },
 ]
